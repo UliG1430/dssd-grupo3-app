@@ -4,9 +4,9 @@ import { addOrden } from '../service/recoleccionService';  // Importamos el serv
 
 // Define el tipo de los datos de la orden (ajusta según lo que uses)
 interface OrdenData {
-  material: string;
-  quantity: number;
-  zone: string;
+  Material: string;
+  Cantidad: number;
+  Zona: string;
 }
 
 const PlanForm: React.FC = () => {
@@ -29,28 +29,28 @@ const PlanForm: React.FC = () => {
         <label className="block text-sm font-medium text-gray-700">Material</label>
         <input
           type="text"
-          {...register('material', { required: 'El material es obligatorio' })}
+          {...register('Material', { required: 'El material es obligatorio' })}
           className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2"
           placeholder="Ingrese el material"
         />
-        {errors.material && <span className="text-red-500 text-sm">{errors.material.message}</span>}
+        {errors.Material && <span className="text-red-500 text-sm">{errors.Material.message}</span>}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Cantidad (en kg)</label>
         <input
           type="number"
-          {...register('quantity', { required: 'La cantidad es obligatoria', min: 0.1 })}
+          {...register('Cantidad', { required: 'La cantidad es obligatoria', min: 0.1 })}
           className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2"
           placeholder="Ingrese la cantidad"
         />
-        {errors.quantity && <span className="text-red-500 text-sm">{errors.quantity.message}</span>}
+        {errors.Cantidad && <span className="text-red-500 text-sm">{errors.Cantidad.message}</span>}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700">Punto</label>
         <select
-          {...register('zone', { required: 'El punto es obligatorio' })}
+          {...register('Zona', { required: 'El punto es obligatorio' })}
           className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2"
         >
           <option value="" disabled>Selecciona un punto</option>
@@ -59,7 +59,7 @@ const PlanForm: React.FC = () => {
           <option value="puntoC">Punto C</option>
           <option value="puntoD">Punto D</option>
         </select>
-        {errors.zone && <span className="text-red-500 text-sm">{errors.zone.message}</span>}
+        {errors.Zona && <span className="text-red-500 text-sm">{errors.Zona.message}</span>}
       </div>
 
       <button
