@@ -1,12 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using api.Data;
+using Backend.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Backend.Repositories;
 using Backend.Services;
-using System.Diagnostics.Tracing;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -16,6 +14,7 @@ builder.Services.AddDbContext<ApiDbContext>(options =>
 builder.Services.AddControllers();
 
 //Repositories
+builder.Services.AddScoped<OrdenRepository>();
 
 //Servicio Bonita
 builder.Services.AddHttpClient<BonitaService>();
@@ -36,20 +35,20 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters()
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateIssuerSigningKey = true,
-            ValidateLifetime = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["ConfigurationJwt:SecretKey"]!)
-            )
-        };
-    });
+// builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+//     .AddJwtBearer(options =>
+//     {
+//         options.TokenValidationParameters = new TokenValidationParameters()
+//         {
+//             ValidateIssuer = false,
+//             ValidateAudience = false,
+//             ValidateIssuerSigningKey = true,
+//             ValidateLifetime = true,
+//             IssuerSigningKey = new SymmetricSecurityKey(
+//                 Encoding.UTF8.GetBytes(builder.Configuration["ConfigurationJwt:SecretKey"]!)
+//             )
+//         };
+//     });
 
 var app = builder.Build();
 
