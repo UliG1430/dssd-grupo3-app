@@ -2,7 +2,7 @@
 
 export const addOrden = async (data: any) => {
     try {
-      const response = await fetch('/api/orden/add', {  
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Orden/AddOrden`, {  // Usamos la URL desde el .env
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
