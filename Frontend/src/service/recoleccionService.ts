@@ -1,17 +1,23 @@
 // src/services/recoleccionService.ts
-export const enviarRecoleccion = async (data: any) => {
-    const response = await fetch('/api/recoleccion', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
+
+export const addOrden = async (data: any) => {
+    try {
+      const response = await fetch('/api/orden/add', {  // Ajusta la URL según tu API
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),  // Enviamos los datos del formulario en el body
+      });
   
-    if (!response.ok) {
-      throw new Error('Error enviando los datos de recolección');
+      if (!response.ok) {
+        throw new Error('Error al guardar la orden');
+      }
+  
+      return await response.json(); // Retornamos la respuesta si fue exitosa
+    } catch (error) {
+      console.error('Error en la llamada a AddOrden:', error);
+      throw error;
     }
-  
-    return response.json();
   };
   

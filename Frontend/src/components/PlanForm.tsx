@@ -1,24 +1,25 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { enviarRecoleccion } from '../service/recoleccionService'; // Corregí la importación
+import { addOrden } from '../service/recoleccionService';  // Importamos el servicio
 
-// Define el tipo para los datos de recolección
-interface RecoleccionData {
+// Define el tipo de los datos de la orden (ajusta según lo que uses)
+interface OrdenData {
   material: string;
   quantity: number;
   zone: string;
 }
 
 const PlanForm: React.FC = () => {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<RecoleccionData>();
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<OrdenData>();
 
-  const onSubmit = async (data: RecoleccionData) => {
+  const onSubmit = async (data: OrdenData) => {
     try {
-      await enviarRecoleccion(data);
-      alert('Recolección enviada exitosamente');
-      reset();
+      // Llamamos al servicio para guardar la orden
+      await addOrden(data);
+      alert('Orden guardada exitosamente');
+      reset(); // Reseteamos el formulario después de guardar
     } catch (error) {
-      alert('Hubo un problema al enviar la recolección');
+      alert('Hubo un problema al guardar la orden');
     }
   };
 
