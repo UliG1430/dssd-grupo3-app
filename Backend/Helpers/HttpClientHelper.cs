@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 
-namespace ApiACEAPP.Helpers;
+namespace Backend.Helpers;
 
 public static class HttpClientHelper
 {

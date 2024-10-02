@@ -2,7 +2,7 @@ using System.Linq.Expressions;
 using api.Data;
 using Microsoft.EntityFrameworkCore;
 
-namespace ApiACEAPP.Repositories
+namespace Backend.Repositories
 {
     public class GenericRepository<TEntity> : IDataRepository<TEntity> where TEntity : class
     {

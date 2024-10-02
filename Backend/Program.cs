@@ -3,8 +3,8 @@ using api.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using ApiACEAPP.Repositories;
-using ApiACEAPP.Services;
+using Backend.Repositories;
+using Backend.Services;
 using System.Diagnostics.Tracing;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,24 +16,10 @@ builder.Services.AddDbContext<ApiDbContext>(options =>
 builder.Services.AddControllers();
 
 //Repositories
-builder.Services.AddScoped<UsuarioRepository>();
-builder.Services.AddScoped<NivelRepository>();
-builder.Services.AddScoped<FacturadorRepository>();
-builder.Services.AddScoped<UsuarioNivelFacturadorRepository>();
-builder.Services.AddScoped<AuthIOMARepository>();
-builder.Services.AddScoped<PracticaRepository>();
-builder.Services.AddScoped<PacienteRepository>();
-builder.Services.AddScoped<SolicitudRepository>();
-builder.Services.AddScoped<ValidacionRepository>();
-builder.Services.AddScoped<ObraSocialRepository>();
-builder.Services.AddScoped<AfiliacionRepository>();
-builder.Services.AddScoped<ProfesionalRepository>();
-builder.Services.AddScoped<ProfesionalFacturadorRepository>();
-builder.Services.AddScoped<EspecialidadRepository>();
-builder.Services.AddScoped<DiagnosticoRepository>();
 
-//Servicio IOMA
-builder.Services.AddScoped<IOMAService>();
+//Servicio Bonita
+builder.Services.AddHttpClient<BonitaService>();
+builder.Services.AddScoped<BonitaService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

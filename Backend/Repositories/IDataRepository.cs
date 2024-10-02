@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 
-namespace ApiACEAPP.Repositories
+namespace Backend.Repositories
 {
     public interface IDataRepository<TEntity>
     {
