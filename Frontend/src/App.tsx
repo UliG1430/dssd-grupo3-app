@@ -1,12 +1,15 @@
 // src/App.tsx
-import CreatePlanPage from './pages/CreatePlanPage';
+import React from 'react';
+import { BrowserRouter as Router } from 'react-router-dom';
+import Navbar from './components/Navbar'; // Navbar
+import AppRoutes from './routes/AppRoutes'; // Rutas centralizadas en su archivo
 
 function App() {
   return (
-    <div>
-      <h1 className="text-3xl font-bold bg-green-500">Tailwind CSS está funcionando</h1> {/* Probar si Tailwind aplica los estilos */}
-      <CreatePlanPage />
-    </div>
+    <Router>
+      <Navbar />
+      <AppRoutes />
+    </Router>
   );
 }
 
