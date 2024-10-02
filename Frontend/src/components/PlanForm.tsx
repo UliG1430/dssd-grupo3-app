@@ -1,6 +1,13 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { enviarRecoleccion, RecoleccionData } from '../service/recoleccionService';
+import { enviarRecoleccion } from '../service/recoleccionService'; // Corregí la importación
+
+// Define el tipo para los datos de recolección
+interface RecoleccionData {
+  material: string;
+  quantity: number;
+  zone: string;
+}
 
 const PlanForm: React.FC = () => {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<RecoleccionData>();
@@ -16,7 +23,7 @@ const PlanForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6"> {/* Ajustamos el espacio entre los campos */}
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div>
         <label className="block text-sm font-medium text-gray-700">Material</label>
         <input
