@@ -2,7 +2,7 @@
 
 export const addOrden = async (data: any) => {
     try {
-      const response = await fetch('/api/orden/add', {  // Ajusta la URL según tu API
+      const response = await fetch('/api/orden/add', {  
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
