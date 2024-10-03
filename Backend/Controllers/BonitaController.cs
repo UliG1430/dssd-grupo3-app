@@ -87,6 +87,23 @@ namespace api.Controllers
             }
         }
 
+        [HttpPost("completeActivity/{caseId}")]
+        public async Task<IActionResult> CompletarActividad(string caseId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            try
+            {
+                _bonitaService.SetToken(token);
+
+                var resultado = await _bonitaService.CompletarActividadAsync(caseId);
+
+                return Ok(new { message = resultado });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
         [HttpGet("getNextTask/{caseId}")]
         public async Task<IActionResult> nextTaskByCaseId(string caseId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
         {

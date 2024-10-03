@@ -108,6 +108,50 @@ namespace Backend.Services
             return null;
         }
 
+        public async Task<string> CompletarActividadAsync(string caseId)
+        {
+            try
+            {
+                // Obtenemos la siguiente tarea del proceso
+                var taskId = await GetNextTaskAsync(caseId);
+
+                if (taskId.Contains("No hay tareas pendientes"))
+                {
+                    return $"No se encontró ninguna tarea para el caseId: {caseId}";
+                }
+
+                // Ejecutamos la tarea con el taskId
+                var resultado = await ExecuteTaskAsync(taskId);
+
+                return resultado;  // Retornamos el resultado de la ejecución de la tarea
+            }
+            catch (Exception ex)
+            {
+                return $"Error al completar la actividad: {ex.Message}";
+            }
+        }
+
+        public async Task<string> ExecuteTaskAsync(string taskId)
+        {
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+
+            var taskUrl = $"http://localhost:8080/bonita/API/bpm/userTask/{taskId}/execution";
+
+            // Realizamos la solicitud POST para completar la tarea
+            var response = await _httpClient.PostAsync(taskUrl, null);  // Enviamos una solicitud vacía
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return $"Error al completar la tarea: {response.ReasonPhrase}";
+            }
+
+            // Leemos el contenido de la respuesta
+            string responseBody = await response.Content.ReadAsStringAsync();
+            return $"Tarea completada con éxito. Respuesta: {responseBody}";
+        }
+
+
+
         public async Task<string> StartProcessAsync(string processDefinitionId) {
             _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
 
