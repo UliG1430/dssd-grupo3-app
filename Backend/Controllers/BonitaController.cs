@@ -122,7 +122,48 @@ namespace api.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
-        
+
+        [HttpGet("{username}/id")]
+        public async Task<IActionResult> GetUserId(string username) {
+            var userId = await _bonitaService.GetUserIdAsync(username);
+            if (userId != null) {
+                return Ok(new { userId });
+            }
+            return NotFound("Usuario no encontrado");
+        }
+
+        [HttpPut("assign/{taskId}/to/{userId}")]
+        public async Task<IActionResult> AssignTaskToUser(string taskId, string userId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            // Verificar si el token está presente
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new { message = "Missing X-Bonita-API-Token" });
+            }
+
+            // Establece el token en el servicio Bonita
+            _bonitaService.SetToken(token);
+
+            try
+            {
+                // Asigna la tarea al usuario
+                var isAssigned = await _bonitaService.AssignTaskToUserAsync(taskId, userId);
+                Console.WriteLine("hola");
+                // Si la asignación fue exitosa, retornar OK
+                if (isAssigned)
+                {
+                    return Ok(new { message = $"Tarea {taskId} asignada al usuario {userId}" });
+                }
+                else
+                {
+                    return StatusCode(500, new { message = $"No se pudo asignar la tarea {taskId} al usuario {userId}" });
+                }
+            }
+            catch (System.Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
     }
 
     // DTO para el login

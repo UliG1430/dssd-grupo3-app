@@ -133,21 +133,33 @@ namespace Backend.Services
 
         public async Task<string> ExecuteTaskAsync(string taskId)
         {
-            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+             try
+                {
+                    _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
 
-            var taskUrl = $"http://localhost:8080/bonita/API/bpm/userTask/{taskId}/execution";
+                    // Usamos interpolación de strings para asegurarnos de que el taskId esté correctamente en la URL
+                    //var taskUrl = $"http://localhost:29810/bonita/API/bpm/userTask/{taskId}/execution";
+                    var taskUrl = $"http://localhost:8080/bonita/API/bpm/userTask/{taskId}/execution";
 
-            // Realizamos la solicitud POST para completar la tarea
-            var response = await _httpClient.PostAsync(taskUrl, null);  // Enviamos una solicitud vacía
+                    // Realizamos la solicitud POST para completar la tarea
+                    var response = await _httpClient.PostAsync(taskUrl, null);  // Enviamos una solicitud vacía
 
-            if (!response.IsSuccessStatusCode)
-            {
-                return $"Error al completar la tarea: {response.ReasonPhrase}";
-            }
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        return $"Error al completar la tarea: {response.ReasonPhrase}";
+                    }
 
-            // Leemos el contenido de la respuesta
-            string responseBody = await response.Content.ReadAsStringAsync();
-            return $"Tarea completada con éxito. Respuesta: {responseBody}";
+                    // Leemos el contenido de la respuesta
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    return $"Tarea completada con éxito. Respuesta: {responseBody}";
+                }
+                catch (System.Exception ex)
+                {
+                    Console.WriteLine($"Ocurrió un error: {ex.Message}");
+                    return "No se pudo finalizar la tarea";
+                }
+
+
         }
 
 
@@ -184,7 +196,8 @@ namespace Backend.Services
             _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
 
             // Realiza la solicitud GET para obtener las tareas pendientes del proceso
-            var response = await _httpClient.GetAsync($"http://localhost:21236/bonita/API/bpm/task?f=caseId={caseId}&s=state=ready");
+            //var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/bpm/task?f=caseId={caseId}");
+            var response = await _httpClient.GetAsync($"http://localhost:8080/bonita/API/bpm/task?f=caseId={caseId}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -201,6 +214,53 @@ namespace Backend.Services
             var nextTaskId = jsonResponse.First?["id"]?.ToString();
 
             return nextTaskId ?? "No hay tareas pendientes para este caso";
+        }
+
+        public async Task<string> GetUserIdAsync(string userName) {
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+            var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/identity/user?p=0&c=10&f=userName={userName}");
+             //var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/identity/user?p=0&c=10&f=userName={userName}");
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                var jsonArray = JArray.Parse(content);
+
+                // Extrae el ID del usuario desde el primer resultado (si existe)
+                if (jsonArray.Any())
+                {
+                    var userId = jsonArray[0]["id"].ToString();
+                    return userId;
+                }
+            }
+            return null;
+        }
+
+        public async Task<bool> AssignTaskToUserAsync(string taskId, string userId)
+        {
+            try {
+                _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+
+                // Crear la solicitud en formato JSON
+                var bodyObject = new
+                {
+                    assigned_id = userId
+                };
+
+                // Serialize the object to JSON
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(bodyObject), Encoding.UTF8, "application/json");
+
+                // Make the POST request to start the process instance
+                //var response = await _httpClient.PostAsync("http://localhost:8080/bonita/API/bpm/case", jsonContent);
+                var response = await _httpClient.PutAsync($"http://localhost:29810/bonita/API/bpm/humanTask/{taskId}", jsonContent);
+
+                // Retorna true si la solicitud fue exitosa
+                return response.IsSuccessStatusCode;
+            } catch (System.Exception ex) {
+                Console.WriteLine("Ocurrió un error al asignar la tarea al usuario: {ex.message}");
+                return false;
+            }
+
+
         }
 
         /*public async Task ExecuteTaskAsync(string taskId, string token) {
