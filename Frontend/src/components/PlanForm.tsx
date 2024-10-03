@@ -1,42 +1,41 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { addOrden } from '../service/recoleccionService';  // Importamos el servicio
-import { completeTask } from '../service/bonitaService';  // Importamos el servicio para completar la tarea
 
+// Define el tipo de las props
+interface PlanFormProps {
+  zona: string;
+  processId: string;  // Aseguramos que acepte el processId
+}
+
+// Define el tipo de los datos de la orden (ajusta según lo que uses)
 interface OrdenData {
   Material: string;
   Cantidad: number;
   Zona: string;
 }
 
-interface PlanFormProps {
-  zona: string;
-  processInstance: string;  // Usamos solo processInstance en lugar de processId
-  token: string;  // Añadimos el token
-}
-
-const PlanForm: React.FC<PlanFormProps> = ({ zona, processInstance, token }) => {
+const PlanForm: React.FC<PlanFormProps> = ({ zona, processId }) => {
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<OrdenData>();
 
   const onSubmit = async (data: OrdenData) => {
     try {
+      // Puedes usar el processId aquí para asociarlo con la orden si es necesario
+      const ordenData = {
+        ...data,
+        processId,  // Asociamos el processId con la orden
+      };
       // Llamamos al servicio para guardar la orden
-      await addOrden(data);
-
-      // Llamar al servicio para completar la tarea
-      const resultado = await completeTask(processInstance, token);
-      console.log('Resultado al completar la tarea:', resultado);
-
-      alert('Orden guardada exitosamente y tarea completada');
+      await addOrden(ordenData);
+      alert('Orden guardada exitosamente');
       reset(); // Reseteamos el formulario después de guardar
     } catch (error) {
-      alert('Hubo un problema al guardar la orden o completar la tarea');
+      alert('Hubo un problema al guardar la orden');
     }
   };
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      {/* Material */}
       <div>
         <label className="block text-sm font-medium text-gray-700">Material</label>
         <input
@@ -48,7 +47,6 @@ const PlanForm: React.FC<PlanFormProps> = ({ zona, processInstance, token }) => 
         {errors.Material && <span className="text-red-500 text-sm">{errors.Material.message}</span>}
       </div>
 
-      {/* Cantidad */}
       <div>
         <label className="block text-sm font-medium text-gray-700">Cantidad (en kg)</label>
         <input
@@ -60,20 +58,14 @@ const PlanForm: React.FC<PlanFormProps> = ({ zona, processInstance, token }) => 
         {errors.Cantidad && <span className="text-red-500 text-sm">{errors.Cantidad.message}</span>}
       </div>
 
-      {/* Zona */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Zona</label>
-        <select
-          {...register('Zona', { required: 'La zona es obligatoria' })}
-          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2"
-          defaultValue={zona}  // Asegúrate de que la zona seleccionada sea visible
-        >
-          <option value="Zona A">Zona A</option>
-          <option value="Zona B">Zona B</option>
-          <option value="Zona C">Zona C</option>
-          <option value="Zona D">Zona D</option>
-        </select>
-        {errors.Zona && <span className="text-red-500 text-sm">{errors.Zona.message}</span>}
+        <label className="block text-sm font-medium text-gray-700">Punto seleccionado</label>
+        <input
+          type="text"
+          value={zona}  // Mostramos la zona seleccionada
+          readOnly
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2 bg-gray-100"
+        />
       </div>
 
       <button
