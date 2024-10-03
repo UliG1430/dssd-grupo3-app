@@ -1,18 +1,30 @@
 // src/services/bonitaService.ts
 
-// Simulamos la llamada a la API con un retraso
-export const iniciarSesionBonita = async () => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // Puedes ajustar este comportamiento para simular errores o respuestas correctas
-        const success = true; // Cambia a false para simular un error
+export const loginBonita = async () => {
+    try {
+      // Credenciales fijas para el login
+      const username = "walter.bates";
+      const password = "bpm";
   
-        if (success) {
-          resolve({ message: 'Autenticación exitosa' });
-        } else {
-          reject(new Error('Error en la autenticación de Bonita'));
-        }
-      }, 2000); // Simulamos un delay de 2 segundos
-    });
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/Login`, {  // Cambia la URL según tu backend
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password })  // Enviamos las credenciales fijas
+      });
+  
+      if (!response.ok) {
+        throw new Error('Error en el login de Bonita');
+      }
+  
+      const data = await response.json();
+      console.log("entre")
+      console.log(data)
+      return data;  // Esto contiene el token u otros datos
+    } catch (error) {
+      console.error('Error en la llamada de login:', error);
+      throw error;
+    }
   };
   

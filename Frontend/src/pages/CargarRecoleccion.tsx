@@ -2,23 +2,19 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion'; // Librería para animaciones
 import PlanForm from '../components/PlanForm';
-import { iniciarSesionBonita } from '../service/bonitaService'; // Servicio simulado
+import { loginBonita } from '../service/bonitaService'; // El servicio para el login de Bonita
 
 const CargarRecoleccion: React.FC = () => {
-  const [mostrarFormulario, setMostrarFormulario] = useState(false); // Controla si se muestra el formulario
-  const [loading, setLoading] = useState(false); // Controla el estado de carga
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
 
   const handleComenzarRecoleccion = async () => {
-    setLoading(true); // Inicia el estado de carga mientras se simula la llamada a la API
     try {
-      // Simulamos el inicio de sesión en Bonita
-      await iniciarSesionBonita();
-      // Mostrar el formulario después de la llamada exitosa
+      // Llamada al backend para iniciar sesión en Bonita
+      await loginBonita();
+      // Mostrar el formulario después de la llamada
       setMostrarFormulario(true);
     } catch (error) {
-      console.error('Error simulando autenticación en Bonita:', error);
-    } finally {
-      setLoading(false); // Detiene el estado de carga después de la simulación
+      console.error('Error iniciando sesión en Bonita:', error);
     }
   };
 
@@ -30,16 +26,15 @@ const CargarRecoleccion: React.FC = () => {
           <button
             onClick={handleComenzarRecoleccion}
             className="bg-green-600 text-white p-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-            disabled={loading} // Desactiva el botón mientras simula la autenticación
           >
-            {loading ? 'Autenticando...' : 'Comenzar'} {/* Muestra un estado de carga */}
+            Comenzar
           </button>
         </>
       ) : (
         <motion.div
-          initial={{ opacity: 0, y: -50 }} // Configuración inicial de la animación
-          animate={{ opacity: 1, y: 0 }} // La animación hace que el formulario se muestre suavemente
-          transition={{ duration: 0.5 }} // Tiempo que tarda en mostrarse el formulario
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
         >
           <PlanForm />
         </motion.div>
