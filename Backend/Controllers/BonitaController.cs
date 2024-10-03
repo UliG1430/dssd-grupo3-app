@@ -88,7 +88,7 @@ namespace api.Controllers
         }
 
         [HttpPost("completeActivity/{caseId}")]
-        public async Task<IActionResult> CompletarActividad(string caseId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        public async Task<IActionResult> CompleteTask(string caseId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
         {
             try
             {
