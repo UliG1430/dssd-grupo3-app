@@ -2,41 +2,39 @@ import React, { useState } from 'react';
 
 interface ZonaSelectorProps {
   onZonaSeleccionada: (zona: string) => void;
+  onProcessIdReceived: (processName: string) => Promise<void>;
 }
 
-const ZonaSelector: React.FC<ZonaSelectorProps> = ({ onZonaSeleccionada }) => {
-  const [zona, setZona] = useState<string | null>(null);
+const ZonaSelector: React.FC<ZonaSelectorProps> = ({ onZonaSeleccionada, onProcessIdReceived }) => {
+  const [selectedZona, setSelectedZona] = useState<string | null>(null);
 
-  const handleZonaChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setZona(e.target.value);
-  };
-
-  const handleConfirmarZona = () => {
-    if (zona) {
-      onZonaSeleccionada(zona); // Llama a la función que propaga la zona seleccionada al componente padre
-    } else {
-      alert('Por favor selecciona una zona.');
+  const handleSeleccionarZona = () => {
+    if (selectedZona) {
+      onZonaSeleccionada(selectedZona);
+      // Llamar a onProcessIdReceived pasando el nombre del proceso (puedes ajustar el nombre según tu necesidad)
+      onProcessIdReceived('Proceso de recolección');
     }
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-3xl font-bold text-green-800 mb-4">Selecciona una zona</h1>
+    <div>
+      <h2>Selecciona una zona:</h2>
       <select
-        onChange={handleZonaChange}
-        className="w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2"
+        value={selectedZona || ''}
+        onChange={(e) => setSelectedZona(e.target.value)}
+        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2"
       >
-        <option value="" disabled>Selecciona una zona</option>
+        <option value="" disabled>Selecciona un punto</option>
         <option value="puntoA">Punto A</option>
         <option value="puntoB">Punto B</option>
         <option value="puntoC">Punto C</option>
         <option value="puntoD">Punto D</option>
       </select>
       <button
-        onClick={handleConfirmarZona}
-        className="bg-green-600 text-white p-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+        onClick={handleSeleccionarZona}
+        className="bg-green-600 text-white p-2 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 mt-4"
       >
-        Confirmar Zona
+        Seleccionar zona
       </button>
     </div>
   );

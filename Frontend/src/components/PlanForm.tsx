@@ -2,28 +2,33 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { addOrden } from '../service/recoleccionService';  // Importamos el servicio
 
+// Define el tipo de las props
+interface PlanFormProps {
+  zona: string;
+  processId: string;  // Aseguramos que acepte el processId
+}
+
+// Define el tipo de los datos de la orden (ajusta según lo que uses)
 interface OrdenData {
   Material: string;
   Cantidad: number;
   Zona: string;
 }
 
-interface PlanFormProps {
-  zona: string; // Prop recibida para la zona
-}
-
-const PlanForm: React.FC<PlanFormProps> = ({ zona }) => {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<OrdenData>({
-    defaultValues: {
-      Zona: zona, // Establecemos la zona predeterminada
-    },
-  });
+const PlanForm: React.FC<PlanFormProps> = ({ zona, processId }) => {
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<OrdenData>();
 
   const onSubmit = async (data: OrdenData) => {
     try {
-      await addOrden(data);
+      // Puedes usar el processId aquí para asociarlo con la orden si es necesario
+      const ordenData = {
+        ...data,
+        processId,  // Asociamos el processId con la orden
+      };
+      // Llamamos al servicio para guardar la orden
+      await addOrden(ordenData);
       alert('Orden guardada exitosamente');
-      reset();
+      reset(); // Reseteamos el formulario después de guardar
     } catch (error) {
       alert('Hubo un problema al guardar la orden');
     }
@@ -54,12 +59,12 @@ const PlanForm: React.FC<PlanFormProps> = ({ zona }) => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Zona</label>
+        <label className="block text-sm font-medium text-gray-700">Punto seleccionado</label>
         <input
           type="text"
-          value={zona} // Mostramos la zona seleccionada como un campo no editable
+          value={zona}  // Mostramos la zona seleccionada
           readOnly
-          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2"
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2 bg-gray-100"
         />
       </div>
 

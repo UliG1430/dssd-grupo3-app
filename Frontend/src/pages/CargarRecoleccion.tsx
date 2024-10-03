@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import ZonaSelector from '../components/ZonaSelector';
+import { motion } from 'framer-motion'; // Librería para animaciones
 import PlanForm from '../components/PlanForm';
-import { loginBonita } from '../service/bonitaService';
+import ZonaSelector from '../components/ZonaSelector';
+import { loginBonita, getProcessId } from '../service/bonitaService'; // Servicios de Bonita
 
 const CargarRecoleccion: React.FC = () => {
-  const [mostrarZonaSelector, setMostrarZonaSelector] = useState(false); // Mostrar selector de zona
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);    // Mostrar formulario
-  const [zonaSeleccionada, setZonaSeleccionada] = useState<string | null>(null); // Zona seleccionada
+  const [mostrarFormulario, setMostrarFormulario] = useState(false);
+  const [zonaSeleccionada, setZonaSeleccionada] = useState<string | null>(null);
+  const [processId, setProcessId] = useState<string | null>(null);
 
-  // Verificar si ya hay un token en sessionStorage al cargar la página
   useEffect(() => {
-    const token = sessionStorage.getItem('bonitaToken');
+    console.log('Revisando token en localStorage en la carga inicial...');
+    const token = localStorage.getItem('bonitaToken');
     if (token) {
-      setMostrarZonaSelector(true); // Si hay token, mostrar el selector de zonas
+      console.log('Token encontrado en localStorage:', token);
+      setMostrarFormulario(false); // Esto cambia según el estado de zona
     }
   }, []);
 
@@ -21,9 +22,14 @@ const CargarRecoleccion: React.FC = () => {
     try {
       console.log('Iniciando el proceso de login en Bonita...');
       const data = await loginBonita();
+      console.log('Login exitoso, token recibido:', data.token);
+      
       if (data && data.token) {
-        sessionStorage.setItem('bonitaToken', data.token); // Guardar en sessionStorage
-        setMostrarZonaSelector(true); // Cambiar a la siguiente etapa
+        // Guardar el token en localStorage
+        localStorage.setItem('bonitaToken', data.token);
+        console.log('Token almacenado en localStorage:', data.token);
+        // Cambiar el estado para avanzar al selector de zonas
+        setMostrarFormulario(true);  // Cambiamos aquí a true para mostrar el selector de zona
       }
     } catch (error) {
       console.error('Error iniciando sesión en Bonita:', error);
@@ -32,12 +38,21 @@ const CargarRecoleccion: React.FC = () => {
 
   const handleZonaSeleccionada = (zona: string) => {
     setZonaSeleccionada(zona);
-    setMostrarFormulario(true); // Al seleccionar la zona, mostrar el formulario
+  };
+
+  const handleProcessIdReceived = async (processName: string) => {
+    try {
+      const id = await getProcessId(processName);
+      setProcessId(id);
+      setMostrarFormulario(true);
+    } catch (error) {
+      console.error('Error obteniendo el Process ID:', error);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 p-6">
-      {!mostrarZonaSelector ? (
+      {!mostrarFormulario && !zonaSeleccionada ? (
         <>
           <h1 className="text-4xl font-bold text-green-800 mb-6">Comenzar proceso de recolección</h1>
           <button
@@ -47,18 +62,19 @@ const CargarRecoleccion: React.FC = () => {
             Comenzar
           </button>
         </>
-      ) : !mostrarFormulario ? (
-        <ZonaSelector onZonaSeleccionada={handleZonaSeleccionada} /> // Mostrar selector de zonas
+      ) : !zonaSeleccionada ? (
+        <ZonaSelector
+          onZonaSeleccionada={handleZonaSeleccionada}
+          onProcessIdReceived={handleProcessIdReceived}
+        />
       ) : (
-        zonaSeleccionada && (
-          <motion.div
-            initial={{ opacity: 0, y: -50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <PlanForm zona={zonaSeleccionada} />  {/* Muestra el formulario */}
-          </motion.div>
-        )
+        <motion.div
+          initial={{ opacity: 0, y: -50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          {processId && <PlanForm zona={zonaSeleccionada} processId={processId} />}
+        </motion.div>
       )}
     </div>
   );
