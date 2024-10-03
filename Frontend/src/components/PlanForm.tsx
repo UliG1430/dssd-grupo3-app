@@ -2,22 +2,28 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { addOrden } from '../service/recoleccionService';  // Importamos el servicio
 
-// Define el tipo de los datos de la orden (ajusta según lo que uses)
 interface OrdenData {
   Material: string;
   Cantidad: number;
   Zona: string;
 }
 
-const PlanForm: React.FC = () => {
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<OrdenData>();
+interface PlanFormProps {
+  zona: string; // Prop recibida para la zona
+}
+
+const PlanForm: React.FC<PlanFormProps> = ({ zona }) => {
+  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<OrdenData>({
+    defaultValues: {
+      Zona: zona, // Establecemos la zona predeterminada
+    },
+  });
 
   const onSubmit = async (data: OrdenData) => {
     try {
-      // Llamamos al servicio para guardar la orden
       await addOrden(data);
       alert('Orden guardada exitosamente');
-      reset(); // Reseteamos el formulario después de guardar
+      reset();
     } catch (error) {
       alert('Hubo un problema al guardar la orden');
     }
@@ -48,18 +54,13 @@ const PlanForm: React.FC = () => {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700">Punto</label>
-        <select
-          {...register('Zona', { required: 'El punto es obligatorio' })}
+        <label className="block text-sm font-medium text-gray-700">Zona</label>
+        <input
+          type="text"
+          value={zona} // Mostramos la zona seleccionada como un campo no editable
+          readOnly
           className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 p-2"
-        >
-          <option value="" disabled>Selecciona un punto</option>
-          <option value="puntoA">Punto A</option>
-          <option value="puntoB">Punto B</option>
-          <option value="puntoC">Punto C</option>
-          <option value="puntoD">Punto D</option>
-        </select>
-        {errors.Zona && <span className="text-red-500 text-sm">{errors.Zona.message}</span>}
+        />
       </div>
 
       <button
