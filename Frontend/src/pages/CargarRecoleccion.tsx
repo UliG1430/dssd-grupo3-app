@@ -84,12 +84,17 @@ const CargarRecoleccion: React.FC = () => {
         )
       ) : (
         <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <PlanForm zona={zonaSeleccionada!} processId={processId!} />
-        </motion.div>
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <PlanForm
+          zona={zonaSeleccionada!}
+          processInstance={processId!}  // Aquí pasas el caseId como processInstance
+          token={token!}  // Pasa el token para completar la actividad
+        />
+      </motion.div>
+      
       )}
     </div>
   );

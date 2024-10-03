@@ -83,3 +83,24 @@ export const logoutBonita = async () => {
     console.error('Error cerrando la sesión de Bonita:', error);
   }
 };
+export const completeTask = async (caseId: string, token: string) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/completeActivity/${caseId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Bonita-API-Token': token,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Error al completar la actividad');
+    }
+
+    const data = await response.json();
+    return data;  // Devolver la respuesta del servidor
+  } catch (error) {
+    console.error('Error al completar la actividad:', error);
+    throw error;
+  }
+};
