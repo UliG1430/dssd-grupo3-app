@@ -135,6 +135,30 @@ namespace Backend.Services
             return caseId ?? "No se pudo obtener el ID del caso";
         }
 
+        public async Task<string> GetNextTaskAsync(string caseId)
+        {
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+
+            // Realiza la solicitud GET para obtener las tareas pendientes del proceso
+            var response = await _httpClient.GetAsync($"http://localhost:21236/bonita/API/bpm/task?f=caseId={caseId}&s=state=ready");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return $"Error al obtener la próxima tarea: {response.ReasonPhrase}";
+            }
+
+            // Leer el contenido de la respuesta
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            // Parsear la respuesta JSON
+            var jsonResponse = JArray.Parse(responseBody);
+
+            // Asumimos que la primera tarea disponible es la siguiente
+            var nextTaskId = jsonResponse.First?["id"]?.ToString();
+
+            return nextTaskId ?? "No hay tareas pendientes para este caso";
+        }
+
         /*public async Task ExecuteTaskAsync(string taskId, string token) {
             _httpClient.DefaultResquestHeaders.Add("X-Bonita-API-Token", token);
             var taskUrl = "http://localhost:8080/bonita/API/bpm/userTask/";

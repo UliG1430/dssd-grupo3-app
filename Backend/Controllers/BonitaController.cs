@@ -86,6 +86,26 @@ namespace api.Controllers
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+        [HttpGet("getNextTask/{caseId}")]
+        public async Task<IActionResult> nextTaskByCaseId(string caseId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new { message = "Missing X-Bonita-AP-Token" });
+            }
+
+            _bonitaService.SetToken(token);
+
+            try {
+                var nextTaskId = await _bonitaService.GetNextTaskAsync(caseId);
+
+                return Ok(new { nextTaskId });
+            } catch (System.Exception ex) {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+        
     }
 
     // DTO para el login
