@@ -1,13 +1,18 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace Backend.Services
 {
     public class BonitaService
     {
         private readonly HttpClient _httpClient;
+        private string _token;
 
         public BonitaService(HttpClient httpClient)
         {
@@ -77,5 +82,61 @@ namespace Backend.Services
                 throw new System.Exception($"Error conectando a la API de Bonita: {ex.Message}");
             }
         }
+
+        public void SetToken(string token) {
+            _token = token;
+        }
+
+        public async Task<string> GetProcessIdAsync(string processName) {
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+            try {
+
+                var response = await _httpClient.GetAsync($"http://localhost:8080/bonita/API/bpm/process?s=recoleccion");
+                string responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(responseBody);
+                JArray processes = JArray.Parse(responseBody);
+                if (processes.Count > 0) {
+                    var processId = processes[0]["id"].ToString();
+                    return processId;
+                }
+            } catch (System.Exception ex) {
+                Console.WriteLine($"Ocurrió un error al recuperar el proceso: {ex.Message}");
+            }
+
+            return null;
+        }
+
+        public async Task<string> StartProcessAsync(string processDefinitionId) {
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+
+            // Crear la solicitud en formato JSON
+            var bodyObject = new
+            {
+                processDefinitionId = processDefinitionId
+            };
+
+            // Serialize the object to JSON
+            var jsonContent = new StringContent(JsonConvert.SerializeObject(bodyObject), Encoding.UTF8, "application/json");
+
+            // Make the POST request to start the process instance
+            var response = await _httpClient.PostAsync("http://localhost:8080/bonita/API/bpm/case", jsonContent);
+
+            // Leer el contenido de la respuesta
+            string responseBody = await response.Content.ReadAsStringAsync();
+
+            var jsonResponse = JObject.Parse(responseBody);
+
+            var caseId = jsonResponse["id"]?.ToString();
+
+            // Devolver la respuesta (el ID de la instancia del proceso que se inició)
+            return caseId ?? "No se pudo obtener el ID del caso";
+        }
+
+        /*public async Task ExecuteTaskAsync(string taskId, string token) {
+            _httpClient.DefaultResquestHeaders.Add("X-Bonita-API-Token", token);
+            var taskUrl = "http://localhost:8080/bonita/API/bpm/userTask/";
+            var content = new StringContent("");
+            var response = await _httpClient($"{")
+        }*/
     }
 }

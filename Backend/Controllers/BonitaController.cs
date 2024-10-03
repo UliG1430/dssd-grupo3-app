@@ -3,6 +3,7 @@ using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
+
 namespace api.Controllers
 {
     [ApiController]
@@ -14,6 +15,13 @@ namespace api.Controllers
         public BonitaController(BonitaService bonitaService)
         {
             _bonitaService = bonitaService;
+        }
+
+        private IActionResult CheckToken(string token) {
+            if (string.IsNullOrEmpty(token)) {
+                return Unauthorized(new { message = "Unauthorized: X-Bonita-API-Token is required" });
+            }
+            return null;
         }
 
         [HttpPost("login")]
@@ -35,6 +43,47 @@ namespace api.Controllers
             catch (System.Exception ex)
             {
                 return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpGet("process/{processName}")]
+        public async Task<IActionResult> getProcessId(string processName, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            Console.WriteLine($"{processName}");
+            var tokenCheck = CheckToken(token);
+            if (tokenCheck != null) {
+                return tokenCheck;
+            }
+            try {
+                _bonitaService.SetToken(token);
+                var processId = await _bonitaService.GetProcessIdAsync(processName);
+                if (processId != null) {
+                    return Ok(new { processId });
+                } else {
+                    return NotFound("Process not found");
+                }
+            } catch (System.Exception ex) {
+                return StatusCode(500, ex.Message);
+            }
+
+        }
+
+        [HttpGet("startprocess/{processId}")]
+        public async Task<IActionResult> startProcessById(string processId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new { message = "Missing X-Bonita-AP-Token" });
+            }
+
+            _bonitaService.SetToken(token);
+
+            try {
+                var processInstance = await _bonitaService.StartProcessAsync(processId);
+
+                return Ok(new { processInstance });
+            } catch (System.Exception ex) {
+                return StatusCode(500, new { message = ex.Message });
             }
         }
     }
