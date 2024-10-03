@@ -22,6 +22,7 @@ namespace Backend.Services
         public async Task<string> LoginAsync(string username, string password)
         {
             var loginUrl = "http://localhost:8080/bonita/loginservice";  // URL de login de Bonita
+            //var loginUrl = "http://localhost:29810/bonita/loginservice";  // URL de login de Bonita
 
             var formData = new FormUrlEncodedContent(new[]
             {
@@ -91,7 +92,8 @@ namespace Backend.Services
             _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
             try {
 
-                var response = await _httpClient.GetAsync($"http://localhost:8080/bonita/API/bpm/process?s=recoleccion");
+                var response = await _httpClient.GetAsync($"http://localhost:8080/bonita/API/bpm/process?s={processName}");
+                //var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/bpm/process?s={processName}");
                 string responseBody = await response.Content.ReadAsStringAsync();
                 Console.WriteLine(responseBody);
                 JArray processes = JArray.Parse(responseBody);
@@ -120,6 +122,7 @@ namespace Backend.Services
 
             // Make the POST request to start the process instance
             var response = await _httpClient.PostAsync("http://localhost:8080/bonita/API/bpm/case", jsonContent);
+            //var response = await _httpClient.PostAsync("http://localhost:29810/bonita/API/bpm/case", jsonContent);
 
             // Leer el contenido de la respuesta
             string responseBody = await response.Content.ReadAsStringAsync();
