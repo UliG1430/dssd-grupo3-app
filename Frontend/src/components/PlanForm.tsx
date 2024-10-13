@@ -23,7 +23,7 @@ const PlanForm: React.FC<PlanFormProps> = ({ zona, processId }) => {
       // Puedes usar el processId aquí para asociarlo con la orden si es necesario
       const ordenData = {
         ...data,
-        processId,  // Asociamos el processId con la orden
+        zona  // Asociamos el processId con la orden
       };
       // Llamamos al servicio para guardar la orden
       await addOrden(ordenData);
