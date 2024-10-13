@@ -1,9 +1,16 @@
 from app import db
 
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    __tablename__ = 'users'
+
+    # Columns
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    mail = db.Column(db.String(120), unique=True, nullable=False)  # User's email address
+    username = db.Column(db.String(50), unique=True, nullable=False)  # Username for login
+    password = db.Column(db.String(200), nullable=False)  # Hashed password
+
+    # Relationship with 'Orden'
+    ordenes = db.relationship('Orden', backref='user', lazy=True)
 
     def __repr__(self):
-        return f'<User {self.username}>'
+        return f"<User {self.username}>"
