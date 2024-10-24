@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token
+from werkzeug.security import check_password_hash  # Importa esta función
 from app.models.user import User
 
 auth_bp = Blueprint('auth_bp', __name__)
@@ -9,12 +10,13 @@ def login():
     username = request.json.get('username', None)
     password = request.json.get('password', None)
 
-    # Aquí debes validar el usuario desde tu base de datos
+    # Busca al usuario por su nombre de usuario
     user = User.query.filter_by(username=username).first()
-    if not user or not (user.password == password):
+    
+    # Verifica si el usuario existe y si la contraseña es correcta
+    if not user or not check_password_hash(user.password, password):
         return jsonify({"msg": "Bad username or password"}), 401
 
-    # Create JWT token
+    # Si la autenticación es exitosa, crea un JWT token
     access_token = create_access_token(identity=user.id)
     return jsonify(access_token=access_token), 200
-
