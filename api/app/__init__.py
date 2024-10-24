@@ -2,7 +2,7 @@ from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
-
+import os
 
 # Inicialización de extensiones
 db = SQLAlchemy()
@@ -12,11 +12,10 @@ jwt = JWTManager()
 def create_app():
     app = Flask(__name__)
 
-    # Configuración de conexión a la base de datos PostgreSQL
-    # app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost/AppDSSD'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost:5433/AppDSSD'
+    # Configuración de conexión a la base de datos PostgreSQL desde variable de entorno
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://postgres:postgres@db:5432/api_database')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = 'dssd-grupo3'
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'dssd-grupo3')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # Token expires in 1 hour
 
     # Inicializar las extensiones
@@ -24,6 +23,7 @@ def create_app():
     migrate.init_app(app, db)
 
     jwt.init_app(app)
+
     @jwt.expired_token_loader
     def expired_token_callback(jwt_header, jwt_payload):
         return jsonify({"msg": "The token has expired"}), 401
