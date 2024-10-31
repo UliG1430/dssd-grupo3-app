@@ -10,7 +10,7 @@ services:
     depends_on:
       - db
     volumes:
-      - .:/app  # Esto monta el directorio actual en el contenedor
+      - .:/app  # Monta el directorio actual en el contenedor
 
   db:
     image: postgres:15
@@ -21,7 +21,6 @@ services:
       POSTGRES_DB: api_database
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./db-scripts/init.sql:/docker-entrypoint-initdb.d/init.sql  # Ruta a tu init.sql en db-scripts
     ports:
       - "5433:5432"
 
