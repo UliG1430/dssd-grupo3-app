@@ -12,7 +12,6 @@ namespace Backend.Services
     public class BonitaService
     {
         private readonly HttpClient _httpClient;
-        private string _token;
 
         public BonitaService(HttpClient httpClient)
         {
@@ -84,16 +83,48 @@ namespace Backend.Services
             }
         }
 
-        public void SetToken(string token) {
-            _token = token;
+        public async Task<bool> LogoutAsync(string token)
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
+
+            try
+            {
+                // Send a DELETE request to Bonita's session endpoint to log out
+                var response = await _httpClient.GetAsync("http://localhost:29810/bonita/logoutservice");
+
+                // Check if the response was successful
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine("Logout successful");
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("Failed to log out. Status Code: " + response.StatusCode);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error during logout: " + ex.Message);
+                return false;
+            }
         }
 
-        public async Task<string> GetProcessIdAsync(string processName) {
-            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+        public async Task<string> GetProcessIdAsync(string processName, string token) {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
             try {
-
+                Console.WriteLine(_httpClient.DefaultRequestHeaders);
                 //var response = await _httpClient.GetAsync($"http://localhost:8080/bonita/API/bpm/process?s={processName}");
                 var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/bpm/process?s={processName}");
+
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return "El token es inválido";
+                }
+
                 string responseBody = await response.Content.ReadAsStringAsync();
                 Console.WriteLine(responseBody);
                 JArray processes = JArray.Parse(responseBody);
@@ -108,96 +139,61 @@ namespace Backend.Services
             return null;
         }
 
-        public async Task<string> CompletarActividadAsync(string caseId)
+        public async Task<string> StartProcessAsync(string processDefinitionId, string token)
         {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
+
+            // Create the request body as JSON
+            var bodyObject = new
+            {
+                processDefinitionId = processDefinitionId,
+            };
+
             try
             {
-                // Obtenemos la siguiente tarea del proceso
-                var taskId = await GetNextTaskAsync(caseId);
+                // Serialize the object to JSON
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(bodyObject), Encoding.UTF8, "application/json");
 
-                if (taskId.Contains("No hay tareas pendientes"))
+                // Make the POST request to start the process instance
+                var response = await _httpClient.PostAsync("http://localhost:29810/bonita/API/bpm/case", jsonContent);
+
+                // Check if the response status is 401
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    return $"No se encontró ninguna tarea para el caseId: {caseId}";
+                    return "El token es inválido";
                 }
 
-                // Ejecutamos la tarea con el taskId
-                var resultado = await ExecuteTaskAsync(taskId);
+                // Read the response content
+                string responseBody = await response.Content.ReadAsStringAsync();
 
-                return resultado;  // Retornamos el resultado de la ejecución de la tarea
+                // Parse the response to get the case ID
+                var jsonResponse = JObject.Parse(responseBody);
+                var caseId = jsonResponse["id"]?.ToString();
+
+                // Return the case ID or a message if it couldn't be retrieved
+                return caseId ?? "No se pudo obtener el ID del caso";
             }
             catch (Exception ex)
             {
-                return $"Error al completar la actividad: {ex.Message}";
+                // Log the exception or handle it as needed
+                Console.WriteLine("Error starting process: " + ex.Message);
+                return "Ocurrió un error al intentar iniciar el proceso";
             }
         }
 
-        public async Task<string> ExecuteTaskAsync(string taskId)
+        public async Task<string> GetNextTaskAsync(string caseId, string token)
         {
-             try
-                {
-                    _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
-
-                    // Usamos interpolación de strings para asegurarnos de que el taskId esté correctamente en la URL
-                    var taskUrl = $"http://localhost:29810/bonita/API/bpm/userTask/{taskId}/execution";
-                    //var taskUrl = $"http://localhost:8080/bonita/API/bpm/userTask/{taskId}/execution";
-
-                    // Realizamos la solicitud POST para completar la tarea
-                    var response = await _httpClient.PostAsync(taskUrl, null);  // Enviamos una solicitud vacía
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        return $"Error al completar la tarea: {response.ReasonPhrase}";
-                    }
-
-                    // Leemos el contenido de la respuesta
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    return $"Tarea completada con éxito. Respuesta: {responseBody}";
-                }
-                catch (System.Exception ex)
-                {
-                    Console.WriteLine($"Ocurrió un error: {ex.Message}");
-                    return "No se pudo finalizar la tarea";
-                }
-
-
-        }
-
-
-
-        public async Task<string> StartProcessAsync(string processDefinitionId) {
-            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
-
-            // Crear la solicitud en formato JSON
-            var bodyObject = new
-            {
-                processDefinitionId = processDefinitionId
-            };
-
-            // Serialize the object to JSON
-            var jsonContent = new StringContent(JsonConvert.SerializeObject(bodyObject), Encoding.UTF8, "application/json");
-
-            // Make the POST request to start the process instance
-            //var response = await _httpClient.PostAsync("http://localhost:8080/bonita/API/bpm/case", jsonContent);
-            var response = await _httpClient.PostAsync("http://localhost:29810/bonita/API/bpm/case", jsonContent);
-
-            // Leer el contenido de la respuesta
-            string responseBody = await response.Content.ReadAsStringAsync();
-
-            var jsonResponse = JObject.Parse(responseBody);
-
-            var caseId = jsonResponse["id"]?.ToString();
-
-            // Devolver la respuesta (el ID de la instancia del proceso que se inició)
-            return caseId ?? "No se pudo obtener el ID del caso";
-        }
-
-        public async Task<string> GetNextTaskAsync(string caseId)
-        {
-            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
 
             // Realiza la solicitud GET para obtener las tareas pendientes del proceso
             var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/bpm/task?f=caseId={caseId}");
             //var response = await _httpClient.GetAsync($"http://localhost:8080/bonita/API/bpm/task?f=caseId={caseId}");
+
+            if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+            {
+                return "El token es inválido";
+            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -216,8 +212,9 @@ namespace Backend.Services
             return nextTaskId ?? "No hay tareas pendientes para este caso";
         }
 
-        public async Task<string> GetUserIdAsync(string userName) {
-            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+        public async Task<string> GetUserIdAsync(string userName, string token) {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
             var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/identity/user?p=0&c=10&f=userName={userName}");
              //var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/identity/user?p=0&c=10&f=userName={userName}");
             if (response.IsSuccessStatusCode)
@@ -231,43 +228,219 @@ namespace Backend.Services
                     var userId = jsonArray[0]["id"].ToString();
                     return userId;
                 }
+            } else {
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return "El token es inválido";
+                } else {
+                    return "Ocurrió un error al recuperar el ID del usuario";
+                }
             }
             return null;
         }
 
-        public async Task<bool> AssignTaskToUserAsync(string taskId, string userId)
+        public async Task<JObject> GetTaskInfoAsync(string taskId, string token)
         {
-            try {
-                _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", _token);
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
 
-                // Crear la solicitud en formato JSON
-                var bodyObject = new
+            try
+            {
+                // Make the request to Bonita API to get task information
+                var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/bpm/task/{taskId}");
+
+                // Check for specific response statuses
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    assigned_id = userId
-                };
+                    return JObject.FromObject(new { status = "401", message = "El token es inválido" });
+                }
 
-                // Serialize the object to JSON
-                var jsonContent = new StringContent(JsonConvert.SerializeObject(bodyObject), Encoding.UTF8, "application/json");
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return JObject.FromObject(new { status = "404", message = "Tarea no encontrada" });
+                }
 
-                // Make the POST request to start the process instance
-                //var response = await _httpClient.PostAsync("http://localhost:8080/bonita/API/bpm/case", jsonContent);
-                var response = await _httpClient.PutAsync($"http://localhost:29810/bonita/API/bpm/humanTask/{taskId}", jsonContent);
+                if (response.IsSuccessStatusCode)
+                {
+                    // Parse and return task data if successful
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine(responseBody);
+                    return JObject.FromObject(new { status = "200", data = JObject.Parse(responseBody) });
+                }
 
-                // Retorna true si la solicitud fue exitosa
-                return response.IsSuccessStatusCode;
-            } catch (System.Exception ex) {
-                Console.WriteLine("Ocurrió un error al asignar la tarea al usuario: {ex.message}");
-                return false;
+                // Handle other unexpected status codes
+                return JObject.FromObject(new { status = "500", message = "Ocurrió un error al recuperar la tarea" });
             }
-
-
+            catch (Exception ex)
+            {
+                // Catch any exceptions and return a 500 status
+                Console.WriteLine($"Error retrieving task info: {ex.Message}");
+                return JObject.FromObject(new { status = "500", message = "Ocurrió un error interno" });
+            }
         }
 
-        /*public async Task ExecuteTaskAsync(string taskId, string token) {
-            _httpClient.DefaultResquestHeaders.Add("X-Bonita-API-Token", token);
-            var taskUrl = "http://localhost:8080/bonita/API/bpm/userTask/";
-            var content = new StringContent("");
-            var response = await _httpClient($"{")
-        }*/
+        public async Task<JObject> AssignTaskToUserAsync(string taskId, string userId, string token)
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
+
+            try
+            {
+                // Create the request payload
+                var bodyObject = new { assigned_id = userId };
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(bodyObject), Encoding.UTF8, "application/json");
+
+                // Make the PUT request to assign the task
+                var response = await _httpClient.PutAsync($"http://localhost:29810/bonita/API/bpm/userTask/{taskId}", jsonContent);
+
+                // Check for specific response statuses
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return JObject.FromObject(new { status = "401", message = "El token es inválido" });
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return JObject.FromObject(new { status = "404", message = "Tarea no encontrada" });
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Task assignment successful
+                    return JObject.FromObject(new { ok = true, message = "Tarea asignada correctamente" });
+                }
+
+                // Handle unexpected status codes
+                return JObject.FromObject(new { status = "500", message = "Ocurrió un error al asignar la tarea" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error assigning task to user: {ex.Message}");
+                return JObject.FromObject(new { status = "500", message = "Ocurrió un error interno" });
+            }
+        }
+
+        public async Task<JObject> SetVariableValueAsync(string caseId, string variableName, bool booleano, string token)
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
+
+            try
+            {
+                // Serialize the request body
+                var hardcodeado = new {
+                    type = "java.lang.Boolean",
+                    value = booleano ? "true" : "false"
+                };
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(hardcodeado), Encoding.UTF8, "application/json");
+                Console.WriteLine("jsonContent: " + jsonContent);
+                // Make the PUT request to Bonita
+                var response = await _httpClient.PutAsync($"http://localhost:29810/bonita/API/bpm/caseVariable/{caseId}/{variableName}", jsonContent);
+
+                // Handle the response
+                if (response.IsSuccessStatusCode)
+                {
+                    return JObject.FromObject(new { ok = true, message = "Variable value set successfully." });
+                }
+
+                // Parse error response
+                var responseBody = await response.Content.ReadAsStringAsync();
+                return JObject.FromObject(new { status = (int)response.StatusCode, message = responseBody });
+            }
+            catch (Exception ex)
+            {
+                return JObject.FromObject(new { status = 500, message = ex.Message });
+            }
+        }
+
+
+        public async Task<JObject> ExecuteTaskAsync(string taskId, string token)
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
+
+            try
+            {
+                // Create the request payload for execution (if required)
+                var bodyObject = new { };
+                var jsonContent = new StringContent(JsonConvert.SerializeObject(bodyObject), Encoding.UTF8, "application/json");
+
+                // Make the POST request to execute the task
+                var response = await _httpClient.PostAsync($"http://localhost:29810/bonita/API/bpm/userTask/{taskId}/execution", jsonContent);
+
+                // Check for specific response statuses
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return JObject.FromObject(new { status = "401", message = "El token es inválido" });
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return JObject.FromObject(new { status = "404", message = "Tarea no encontrada" });
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    // Task executed successfully
+                    return JObject.FromObject(new { ok = true, message = "Tarea ejecutada correctamente" });
+                }
+
+                // Handle unexpected status codes
+                return JObject.FromObject(new { status = "500", message = "Ocurrió un error al ejecutar la tarea" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error executing task: {ex.Message}");
+                return JObject.FromObject(new { status = "500", message = "Ocurrió un error interno" });
+            }
+        }
+
+        public async Task<JObject> GetVariableValueAsync(string caseId, string variableName, string token)
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
+
+            try
+            {
+                // Make the GET request to retrieve the variable value
+                var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/bpm/caseVariable/{caseId}/{variableName}");
+
+                // Handle specific status codes
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    return JObject.FromObject(new { status = "401", message = "Unauthorized: Invalid token." });
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    return JObject.FromObject(new { status = "404", message = $"Variable '{variableName}' not found in case '{caseId}'." });
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    var variableData = JObject.Parse(responseBody);
+                    Console.WriteLine(variableData);
+                    return JObject.FromObject(new { data = variableData });
+                }
+
+                // Handle unexpected responses
+                return JObject.FromObject(new { status = "500", message = "Unexpected error occurred while retrieving the variable value." });
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions
+                return JObject.FromObject(new { status = "500", message = $"Error: {ex.Message}" });
+            }
+        }
+
     }
+
+    public class VariableRequest
+    {
+        public string Type { get; set; } // e.g., "java.lang.Boolean"
+        public object Value { get; set; } // e.g., true or false
+    }
+
+
 }

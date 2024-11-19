@@ -12,6 +12,7 @@ namespace api.Controllers
     {
         private readonly BonitaService _bonitaService;
 
+
         public BonitaController(BonitaService bonitaService)
         {
             _bonitaService = bonitaService;
@@ -46,6 +47,26 @@ namespace api.Controllers
             }
         }
 
+        [HttpGet("logout")]
+        public async Task<IActionResult> Logout([FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new { message = "Missing X-Bonita-API-Token" });
+            }
+
+            var result = await _bonitaService.LogoutAsync(token);
+
+            if (result)
+            {
+                return Ok(new { message = "Logout successful" });
+            }
+            else
+            {
+                return StatusCode(500, new { message = "Logout failed" });
+            }
+        }
+
         [HttpGet("process/{processName}")]
         public async Task<IActionResult> getProcessId(string processName, [FromHeader(Name = "X-Bonita-API-Token")] string token)
         {
@@ -55,8 +76,7 @@ namespace api.Controllers
                 return tokenCheck;
             }
             try {
-                _bonitaService.SetToken(token);
-                var processId = await _bonitaService.GetProcessIdAsync(processName);
+                var processId = await _bonitaService.GetProcessIdAsync(processName, token);
                 if (processId != null) {
                     return Ok(new { processId });
                 } else {
@@ -71,15 +91,13 @@ namespace api.Controllers
         [HttpGet("startprocess/{processId}")]
         public async Task<IActionResult> startProcessById(string processId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
         {
-            if (string.IsNullOrEmpty(token))
-            {
-                return Unauthorized(new { message = "Missing X-Bonita-AP-Token" });
+            var tokenCheck = CheckToken(token);
+            if (tokenCheck != null) {
+                return tokenCheck;
             }
 
-            _bonitaService.SetToken(token);
-
             try {
-                var processInstance = await _bonitaService.StartProcessAsync(processId);
+                var processInstance = await _bonitaService.StartProcessAsync(processId, token);
 
                 return Ok(new { processInstance });
             } catch (System.Exception ex) {
@@ -87,35 +105,37 @@ namespace api.Controllers
             }
         }
 
-        [HttpPost("completeActivity/{caseId}")]
-        public async Task<IActionResult> CompleteTask(string caseId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
-        {
-            try
-            {
-                _bonitaService.SetToken(token);
 
-                var resultado = await _bonitaService.CompletarActividadAsync(caseId);
 
-                return Ok(new { message = resultado });
-            }
-            catch (Exception ex)
-            {
+        [HttpGet("{username}/id")]
+        public async Task<IActionResult> GetUserId(string username, [FromHeader(Name = "X-Bonita-API-Token")] string token){
+            try {
+                var tokenCheck = CheckToken(token);
+                if (tokenCheck != null) {
+                    return tokenCheck;
+                }
+
+                var userId = await _bonitaService.GetUserIdAsync(username, token);
+                if (userId != null) {
+                    return Ok(new { userId });
+                }
+                return NotFound("Usuario no encontrado");
+            } catch (System.Exception ex) {
                 return StatusCode(500, new { message = ex.Message });
             }
+
         }
 
         [HttpGet("getNextTask/{caseId}")]
         public async Task<IActionResult> nextTaskByCaseId(string caseId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
         {
-            if (string.IsNullOrEmpty(token))
-            {
-                return Unauthorized(new { message = "Missing X-Bonita-AP-Token" });
+            var tokenCheck = CheckToken(token);
+            if (tokenCheck != null) {
+                return tokenCheck;
             }
 
-            _bonitaService.SetToken(token);
-
             try {
-                var nextTaskId = await _bonitaService.GetNextTaskAsync(caseId);
+                var nextTaskId = await _bonitaService.GetNextTaskAsync(caseId, token);
 
                 return Ok(new { nextTaskId });
             } catch (System.Exception ex) {
@@ -123,48 +143,264 @@ namespace api.Controllers
             }
         }
 
-        [HttpGet("{username}/id")]
-        public async Task<IActionResult> GetUserId(string username) {
-            var userId = await _bonitaService.GetUserIdAsync(username);
-            if (userId != null) {
-                return Ok(new { userId });
-            }
-            return NotFound("Usuario no encontrado");
-        }
-
-        [HttpPut("assign/{taskId}/to/{userId}")]
-        public async Task<IActionResult> AssignTaskToUser(string taskId, string userId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        [HttpGet("task/{taskId}")]
+        public async Task<IActionResult> GetTaskInfo(string taskId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
         {
-            // Verificar si el token está presente
-            if (string.IsNullOrEmpty(token))
+            var tokenCheck = CheckToken(token);
+            if (tokenCheck != null)
             {
-                return Unauthorized(new { message = "Missing X-Bonita-API-Token" });
+                return tokenCheck;
             }
-
-            // Establece el token en el servicio Bonita
-            _bonitaService.SetToken(token);
 
             try
             {
-                // Asigna la tarea al usuario
-                var isAssigned = await _bonitaService.AssignTaskToUserAsync(taskId, userId);
-                Console.WriteLine("hola");
-                // Si la asignación fue exitosa, retornar OK
-                if (isAssigned)
+                var taskInfo = await _bonitaService.GetTaskInfoAsync(taskId, token);
+
+                if (taskInfo.ContainsKey("status") && taskInfo["status"].ToString() == "401")
                 {
-                    return Ok(new { message = $"Tarea {taskId} asignada al usuario {userId}" });
+                    return Unauthorized(new { message = taskInfo["message"] });
                 }
-                else
+
+                if (taskInfo.ContainsKey("status") && taskInfo["status"].ToString() == "404")
                 {
-                    return StatusCode(500, new { message = $"No se pudo asignar la tarea {taskId} al usuario {userId}" });
+                    return NotFound(new { message = taskInfo["message"] });
                 }
+
+                if (taskInfo.ContainsKey("status") && taskInfo["status"].ToString() == "500")
+                {
+                    return StatusCode(500, new { message = taskInfo["message"] });
+                }
+
+                if (taskInfo.ContainsKey("data"))
+                {
+                    var data = taskInfo["data"];
+
+                    var taskDetails = new
+                    {
+                        DisplayDescription = data?["displayDescription"]?.ToString(),
+                        ExecutedBy = data?["executedBy"]?.ToString(),
+                        RootContainerId = data?["rootContainerId"]?.ToString(),
+                        AssignedDate = data?["assigned_date"]?.ToString(),
+                        DisplayName = data?["displayName"]?.ToString(),
+                        ExecutedBySubstitute = data?["executedBySubstitute"]?.ToString(),
+                        DueDate = data?["dueDate"]?.ToString(),
+                        Description = data?["description"]?.ToString(),
+                        Type = data?["type"]?.ToString(),
+                        Priority = data?["priority"]?.ToString(),
+                        ActorId = data?["actorId"]?.ToString(),
+                        ProcessId = data?["processId"]?.ToString(),
+                        CaseId = data?["caseId"]?.ToString(),
+                        Name = data?["name"]?.ToString(),
+                        ReachedStateDate = data?["reached_state_date"]?.ToString(),
+                        RootCaseId = data?["rootCaseId"]?.ToString(),
+                        Id = data?["id"]?.ToString(),
+                        State = data?["state"]?.ToString(),
+                        ParentCaseId = data?["parentCaseId"]?.ToString(),
+                        LastUpdateDate = data?["last_update_date"]?.ToString(),
+                        AssignedId = data?["assigned_id"]?.ToString()
+                    };
+
+                    return Ok(taskDetails);
+                }
+
+                return StatusCode(500, new { message = "Unexpected error occurred." });
             }
-            catch (System.Exception ex)
+            catch (Exception ex)
             {
                 return StatusCode(500, new { message = ex.Message });
             }
         }
+
+
+        [HttpPut("task/{taskId}/assign/{userId}")]
+        public async Task<IActionResult> AssignTaskToUser(string taskId, string userId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            // Check if token is provided
+            var tokenCheck = CheckToken(token);
+            if (tokenCheck != null)
+            {
+                return tokenCheck; // Return 401 if token is missing
+            }
+
+            try
+            {
+                // Call the service to assign the task
+                var result = await _bonitaService.AssignTaskToUserAsync(taskId, userId, token);
+
+                // Handle response based on the returned structure
+                if (result.ContainsKey("status") && result["status"].ToString() == "401")
+                {
+                    return Unauthorized(new { message = result["message"] });
+                }
+
+                if (result.ContainsKey("status") && result["status"].ToString() == "404")
+                {
+                    return NotFound(new { message = result["message"].ToString() });
+                }
+
+                if (result.ContainsKey("status") && result["status"].ToString() == "500")
+                {
+                    return StatusCode(500, new { message = result["message"].ToString() });
+                }
+
+                if (result.ContainsKey("ok") && (bool)result["ok"])
+                {
+                    return Ok(new { message = result["message"].ToString() });
+                }
+
+                // Fallback in case of unexpected response
+                return StatusCode(500, new { message = "Unexpected error occurred." });
+            }
+            catch (Exception ex)
+            {
+                // Handle any unhandled errors
+                return StatusCode(500, new { message = ex.Message });
+            }
+
+        }
+
+        [HttpPut("case/{caseId}/variable/{variableName}")]
+        public async Task<IActionResult> SetVariableValue(
+            string caseId,
+            string variableName,
+            [FromHeader(Name = "X-Bonita-API-Token")] string token,
+            [FromBody] VariableRequest variableRequest)
+        {
+            // Check if token is provided
+            var tokenCheck = CheckToken(token);
+            if (tokenCheck != null)
+            {
+                return tokenCheck; // Return 401 if token is missing
+            }
+
+            var booleano = variableRequest.Value.ToString().ToLower() == "true" ? true : false;
+            Console.WriteLine(booleano);
+            try
+            {
+                // Pass the data to the service
+                var result = await _bonitaService.SetVariableValueAsync(caseId, variableName, booleano, token);
+
+                // Handle response from service
+                if (result.ContainsKey("status") && result["status"].ToString() == "401")
+                {
+                    return Unauthorized(new { message = result["message"].ToString() });
+                }
+
+                if (result.ContainsKey("status") && result["status"].ToString() == "404")
+                {
+                    return NotFound(new { message = result["message"].ToString() });
+                }
+
+                if (result.ContainsKey("status") && result["status"].ToString() == "500")
+                {
+                    return StatusCode(500, new { message = result["message"].ToString() });
+                }
+
+                if (result.ContainsKey("ok") && (bool)result["ok"])
+                {
+                    return Ok(new { message = result["message"].ToString() });
+                }
+
+                // Fallback for unexpected responses
+                return StatusCode(500, new { message = "Unexpected error occurred." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+
+        [HttpPost("task/{taskId}/execute")]
+        public async Task<IActionResult> ExecuteTask(string taskId, [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            // Check if token is provided
+            var tokenCheck = CheckToken(token);
+            if (tokenCheck != null)
+            {
+                return tokenCheck; // Return 401 if token is missing
+            }
+
+            try
+            {
+                // Call the service to execute the task
+                var result = await _bonitaService.ExecuteTaskAsync(taskId, token);
+
+                // Handle response based on the returned structure
+                if (result.ContainsKey("status") && result["status"].ToString() == "401")
+                {
+                    return Unauthorized(new { message = result["message"].ToString() });
+                }
+
+                if (result.ContainsKey("status") && result["status"].ToString() == "404")
+                {
+                    return NotFound(new { message = result["message"].ToString() });
+                }
+
+                if (result.ContainsKey("status") && result["status"].ToString() == "500")
+                {
+                    return StatusCode(500, new { message = result["message"].ToString() });
+                }
+
+                if (result.ContainsKey("ok") && (bool)result["ok"])
+                {
+                    return Ok(new { message = result["message"].ToString() });
+                }
+
+                // Fallback in case of unexpected response
+                return StatusCode(500, new { message = "Unexpected error occurred." });
+            }
+            catch (Exception ex)
+            {
+                // Handle any unhandled errors
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("case/{caseId}/variable/{variableName}")]
+        public async Task<IActionResult> GetVariableValue(
+            string caseId,
+            string variableName,
+            [FromHeader(Name = "X-Bonita-API-Token")] string token)
+        {
+            // Check if the token is provided
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new { message = "Unauthorized: X-Bonita-API-Token is required" });
+            }
+
+            try
+            {
+                // Call the service to get the variable value
+                var result = await _bonitaService.GetVariableValueAsync(caseId, variableName, token);
+
+                if (result.ContainsKey("status") && result["status"].ToString() == "401")
+                {
+                    return Unauthorized(new { message = result["message"] });
+                }
+
+                if (result.ContainsKey("status") && result["status"].ToString() == "404")
+                {
+                    return NotFound(new { message = result["message"] });
+                }
+
+                if (result.ContainsKey("data"))
+                {
+                    return Ok(new { variableName, value = result["data"] });
+                }
+
+                // Handle unexpected responses
+                return StatusCode(500, new { message = "Unexpected error occurred." });
+            }
+            catch (Exception ex)
+            {
+                // Handle any unhandled errors
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
     }
+
 
     // DTO para el login
     public class BonitaLoginRequest
@@ -172,4 +408,11 @@ namespace api.Controllers
         public string Username { get; set; }
         public string Password { get; set; }
     }
+
+    public class VariableValueDto
+    {
+        public string Type { get; set; }
+        public object Value { get; set; }
+    }
+
 }
