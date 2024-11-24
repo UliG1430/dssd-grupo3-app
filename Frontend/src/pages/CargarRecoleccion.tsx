@@ -1,96 +1,143 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import ZonaSelector from '../components/ZonaSelector';
-import PlanForm from '../components/PlanForm';
-import { loginBonita, getProcessId, startProcessById } from '../service/bonitaService';
+import { SubmitHandler, FieldValues, set } from 'react-hook-form';
+import GenericForm, { FormField } from '../components/Form';
+import Modal from '../components/Modal';
+import Button from '../components/Button';
+import { getMateriales, addOrden } from '../service/recoleccionService';
+import { executeTask, getTaskById, assignTask, setCaseVariable, getNextTaskId } from '../service/bonitaService';
+import { useNavigate } from 'react-router-dom';
+
+interface RecoleccionData {
+  material: string;
+  cantidad: number;
+}
 
 const CargarRecoleccion: React.FC = () => {
-  const [tokenGuardado, setTokenGuardado] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
-  const [zonaSeleccionada, setZonaSeleccionada] = useState<string | null>(null);
-  const [processId, setProcessId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const navigate = useNavigate();
+  const [data, setData] = useState<RecoleccionData>({ material: '', cantidad: 0 });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [materiales, setMateriales] = useState<{ value: string | number; label: string }[]>([]);
 
   useEffect(() => {
-    const tokenGuardado = localStorage.getItem('bonitaToken');
-    if (tokenGuardado) {
-      setToken(tokenGuardado);
-      setTokenGuardado(true);
-    }
+    const fetchData = async () => {
+      try {
+
+        const mats = await getMateriales();
+        setMateriales(mats.map(m => ({ value: m.id, label: m.nombre })));
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Error fetching data');
+      }
+    };
+
+    fetchData();
   }, []);
 
-  const handleComenzarRecoleccion = async () => {
+  const handleComenzarRecoleccion: SubmitHandler<FieldValues> = async (data) => {
+    setIsSubmitting(true);
     try {
+      setData(data as RecoleccionData);
       setError(null);
-      console.log('Iniciando el proceso de login en Bonita...');
-      const data = await loginBonita();
-      if (data && data.token) {
-        localStorage.setItem('bonitaToken', data.token);
-        setToken(data.token);
-        setTokenGuardado(true);
-
-        // Obtener el processId
-        console.log('Obteniendo el processId...');
-        const processIdData = await getProcessId('Proceso de recolección', data.token);
-        if (processIdData && processIdData.processId) {
-          setProcessId(processIdData.processId);  // Guardar processId
-          console.log('Process ID recibido:', processIdData.processId);
-        } else {
-          setError('No se pudo obtener el ID del proceso.');
-        }
-      }
+      console.log('Datos del formulario:', data);
+      setIsModalOpen(true); // Open the modal
     } catch (error) {
-      console.error('Error iniciando sesión o obteniendo el processId:', error);
-      setError('Error iniciando sesión o obteniendo el ID del proceso.');
+      console.error('Error al procesar el formulario:', error);
+      setError('Error al procesar el formulario');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleProcessIdReceived = async (processId: string) => {
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
+
+  const handleKeepRecolecting = async () => {
+    setIsModalOpen(false);
+    await setCaseVariable(localStorage.getItem('caseId')!, 'pointsLeft', true);
+    await proceedToNextTask();
+  };
+
+  const handleFinishRecolecting = async () => {
+    setIsModalOpen(false);
+    await setCaseVariable(localStorage.getItem('caseId')!, 'pointsLeft', false);
+    await proceedToNextTask();
+  };
+
+  const proceedToNextTask = async () => {
+    await addOrden({
+      'Material': data.material,
+      'Zona': localStorage.getItem('puntoRecoleccionId'),
+      'Cantidad': data.cantidad,
+      'UsuarioId': localStorage.getItem('idUser'),
+      'CaseId': localStorage.getItem('caseId'),
+    }); // Add the order
     try {
-      if (!token) {
-        throw new Error('Token no encontrado');
+      const caseId = localStorage.getItem('caseId');
+      let nextTaskId = await getNextTaskId(caseId!);
+      await executeTask(nextTaskId);
+      
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      nextTaskId = await getNextTaskId(caseId!);
+
+      const taskInfo = await getTaskById(nextTaskId);
+      const bonitaUserId = localStorage.getItem('idUserBonita');
+      if (bonitaUserId) {
+        await assignTask(taskInfo.id, bonitaUserId);
+        localStorage.setItem('nextTaskId', taskInfo.id);
       }
-      const processInstance = await startProcessById(processId, token);
-      console.log('Proceso iniciado:', processInstance);
+
+      if (taskInfo.name === 'Visitar punto') {
+        navigate('/visitar-punto');
+      } else {
+        navigate('/esperar-cobro');
+      }
     } catch (error) {
-      console.error('Error al iniciar el proceso:', error);
-      setError('Error al iniciar el proceso.');
+      console.error('Error al procesar la siguiente tarea:', error);
+      setError('Error al procesar la siguiente tarea');
     }
   };
+
+  const formFields: FormField[] = [
+    {
+      name: 'material',
+      type: 'select',
+      label: 'Material',
+      options: materiales,
+      validation: { required: 'El material es obligatorio' },
+    },
+    {
+      name: 'cantidad',
+      type: 'number',
+      label: 'Cantidad',
+      placeholder: 'Ingrese la cantidad',
+      validation: { required: 'La cantidad es obligatoria', min: { value: 1, message: 'La cantidad debe ser al menos 1' } },
+    },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-green-50 p-6">
-      {error && <p className="text-red-500">{error}</p>}
-      {!tokenGuardado ? (
-        <>
-          <h1 className="text-4xl font-bold text-green-800 mb-6">Comenzar proceso de recolección</h1>
-          <button
-            onClick={handleComenzarRecoleccion}
-            className="bg-green-600 text-white p-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
-            Comenzar
-          </button>
-        </>
-      ) : !zonaSeleccionada ? (
-        processId ? ( // Solo mostramos ZonaSelector si ya tenemos el processId
-          <ZonaSelector
-            onZonaSeleccionada={setZonaSeleccionada}
-            onProcessIdReceived={handleProcessIdReceived}
-            processId={processId}
-            token={token!}
-          />
-        ) : (
-          <p className="text-gray-500">Cargando proceso de recolección...</p>
-        )
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <PlanForm zona={zonaSeleccionada!} processId={processId!} />
-        </motion.div>
-      )}
+      <div className="bg-white p-8 rounded-md shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-6 text-center">Cargar Recolección</h2>
+        {error && <p className="text-red-500">{error}</p>}
+        <GenericForm
+          fields={formFields}
+          onSubmit={handleComenzarRecoleccion}
+          submitButtonText="Realizar Orden"
+          isSubmitting={isSubmitting}
+        />
+      </div>
+
+      <Modal isOpen={isModalOpen} onClose={handleModalClose} title="¿Qué desea hacer?">
+        <Button onClick={handleKeepRecolecting} color="green">
+          Seguir recolectando
+        </Button>
+        <Button onClick={handleFinishRecolecting} color="red">
+          Terminar recolección
+        </Button>
+      </Modal>
     </div>
   );
 };

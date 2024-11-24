@@ -15,6 +15,9 @@ builder.Services.AddControllers();
 
 //Repositories
 builder.Services.AddScoped<OrdenRepository>();
+builder.Services.AddScoped<PuntoRecoleccionRepository>();
+builder.Services.AddScoped<UsuarioRepository>();
+builder.Services.AddScoped<MaterialRepository>();
 
 //Servicio Bonita
 builder.Services.AddHttpClient<BonitaService>();

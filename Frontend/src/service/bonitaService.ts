@@ -1,34 +1,52 @@
 // src/services/bonitaService.ts
 
-export const loginBonita = async () => {
-  try {
-    // Credenciales fijas para el login
-    const username = "walter.bates";
-    const password = "bpm";
+const getBonitaToken = () => {
+  return localStorage.getItem('bonitaToken');
+};
 
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/Login`, {  // Cambia la URL según tu backend
+export const loginBonita = async (username: string, password: string) => {
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/Login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ username, password })  // Enviamos las credenciales fijas
+      body: JSON.stringify({ username, password })
     });
 
-    if (!response.ok) {
-      throw new Error('Error en el login de Bonita');
+    if (response.status !== 200) {
+      throw new Error('Error al obtener la siguiente tarea');
     }
 
     const data = await response.json();
     console.log("Token de Bonita recibido:", data);
-    return data;  // Esto contiene el token
+    localStorage.setItem('bonitaToken', data.token); // Store the token in localStorage
+    return data;
   } catch (error) {
     console.error('Error en la llamada de login:', error);
     throw error;
   }
 };
 
-export const getProcessId = async (processName: string, token: string) => {
+export const logoutBonita = async () => {
   try {
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
+    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/Logout`, {
+      method: 'GET',
+      headers: {
+        'X-Bonita-API-Token': token,
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Sesión de Bonita cerrada.');
+  } catch (error) {
+    console.error('Error cerrando la sesión de Bonita:', error);
+  }
+}
+
+export const getProcessId = async (processName: string) => {
+  try {
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/process/${processName}`, {
       method: 'GET',
       headers: {
@@ -37,21 +55,22 @@ export const getProcessId = async (processName: string, token: string) => {
       },
     });
 
-    if (!response.ok) {
-      throw new Error('Error al obtener el processId');
+    if (response.status !== 200) {
+      throw new Error('Error al obtener la siguiente tarea');
     }
 
     const data = await response.json();
     console.log("Process ID recibido:", data);
-    return data;  // Retorna el `processId`
+    return data.processId;  // Retorna el `processId`
   } catch (error) {
     console.error('Error en la llamada a getProcessId:', error);
     throw error;
   }
 };
 
-export const startProcessById = async (processId: string, token: string) => {
+export const startProcessById = async (processId: number) => {
   try {
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
     const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/startprocess/${processId}`, {
       method: 'GET',
       headers: {
@@ -60,47 +79,159 @@ export const startProcessById = async (processId: string, token: string) => {
       },
     });
 
-    if (!response.ok) {
-      throw new Error('Error al iniciar el proceso');
+    if (response.status !== 200) {
+      throw new Error('Error al obtener la siguiente tarea');
     }
 
     const data = await response.json();
     console.log('Proceso iniciado:', data);
-    return data; // Retorna la instancia del proceso
+    return data.processInstance; // Retorna la instancia del proceso
   } catch (error) {
     console.error('Error en la llamada a startProcessById:', error);
     throw error;
   }
 };
 
-export const logoutBonita = async () => {
+export const getNextTaskId = async (caseId: string): Promise<any> => {
   try {
-    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/Logout`, {  // Llama al endpoint de logout en tu backend
-      method: 'POST',
-    });
-    console.log('Sesión de Bonita cerrada.');
-  } catch (error) {
-    console.error('Error cerrando la sesión de Bonita:', error);
-  }
-};
-export const completeTask = async (caseId: string, token: string) => {
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/completeActivity/${caseId}`, {
-      method: 'POST',
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
+    console.log(`${import.meta.env.VITE_API_BASE_URL}/Bonita/getNextTask/${caseId}`);
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/getNextTask/${caseId}`, {
+      method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'X-Bonita-API-Token': token,
+      'X-Bonita-API-Token': token,
+      'Content-Type': 'application/json',
       },
     });
 
-    if (!response.ok) {
-      throw new Error('Error al completar la actividad');
+    if (response.status !== 200) {
+      throw new Error('Error al obtener la siguiente tarea');
     }
 
     const data = await response.json();
-    return data;  // Devolver la respuesta del servidor
+    console.log('Siguiente tarea obtenida:', data);
+    return data.nextTaskId; // Retorna el id de la tarea
   } catch (error) {
-    console.error('Error al completar la actividad:', error);
+    console.error('Error en la llamada a getNextTask:', error);
     throw error;
   }
 };
+
+export const assignTask = async (taskId: string, userId: string): Promise<void> => {
+  try {
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/task/${taskId}/assign/${userId}`, {
+      method: 'PUT',
+      headers: {
+        'X-Bonita-API-Token': token,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error('Error al asignar la tarea');
+    }
+
+    console.log(`Tarea ${taskId} asignada al usuario ${userId}`);
+  } catch (error) {
+    console.error('Error en la llamada a assignTask:', error);
+    throw error;
+  }
+};
+
+export const executeTask = async (taskId: string): Promise<void> => {
+  try {
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/task/${taskId}/execute`, {
+      method: 'POST',
+      headers: {
+        'X-Bonita-API-Token': token,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error('Error al obtener la siguiente tarea');
+    }
+
+    console.log(`Tarea ${taskId} ejecutada`);
+  } catch (error) {
+    console.error('Error en la llamada a executeTask:', error);
+    throw error;
+  }
+};
+
+export const setCaseVariable = async (caseId: string, variableName: string, value: boolean): Promise<void> => {
+  try {
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/case/${caseId}/variable/${variableName}`, {
+      method: 'PUT',
+      headers: {
+        'X-Bonita-API-Token': token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'java.lang.Boolean',
+        value: value,
+      }),
+    });
+
+    if (response.status !== 200) {
+      throw new Error('Error al obtener la siguiente tarea');
+    }
+
+    console.log(`Variable ${variableName} del caso ${caseId} establecida a ${value}`);
+  } catch (error) {
+    console.error('Error en la llamada a setCaseVariable:', error);
+    throw error;
+  }
+};
+
+export const getUsuarioIdByUsername = async (username: string): Promise<number> => {
+  try {
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/${username}/id`, {
+      method: 'GET',
+      headers: {
+        'X-Bonita-API-Token': token,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error('Error al obtener la siguiente tarea');
+    }
+
+    console.log(`Se obtuvo el id del usuario: ${username}: ${response}`);
+    const data = await response.json(); // Retorna el id del usuario
+    return data.userId;
+  } catch (error) {
+    console.error('Error en la llamada a setCaseVariable:', error);
+    throw error;
+  }
+};
+
+export const getTaskById = async (taskId: string): Promise<any> => {
+  try {
+    const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/task/${taskId}`, {
+      method: 'GET',
+      headers: {
+        'X-Bonita-API-Token': token,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.status !== 200) {
+      throw new Error('Error al obtener la siguiente tarea');
+    }
+
+    const data = await response.json();
+    console.log('Tarea obtenida:', data);
+    return data;
+  } catch (error) {
+    console.error('Error en la llamada a getTaskById:', error);
+    throw error;
+  }
+};
+

@@ -1,3 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.petero {
+    @apply bg-red-500 text-white;
+}

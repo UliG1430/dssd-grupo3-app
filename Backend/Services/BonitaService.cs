@@ -157,15 +157,14 @@ namespace Backend.Services
 
                 // Make the POST request to start the process instance
                 var response = await _httpClient.PostAsync("http://localhost:29810/bonita/API/bpm/case", jsonContent);
-
+                string responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine(responseBody);
                 // Check if the response status is 401
                 if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     return "El token es inválido";
                 }
 
-                // Read the response content
-                string responseBody = await response.Content.ReadAsStringAsync();
 
                 // Parse the response to get the case ID
                 var jsonResponse = JObject.Parse(responseBody);
@@ -185,7 +184,7 @@ namespace Backend.Services
         public async Task<string> GetNextTaskAsync(string caseId, string token)
         {
             _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
-
+            Console.WriteLine(caseId);
             // Realiza la solicitud GET para obtener las tareas pendientes del proceso
             var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/bpm/task?f=caseId={caseId}");
             //var response = await _httpClient.GetAsync($"http://localhost:8080/bonita/API/bpm/task?f=caseId={caseId}");
@@ -205,7 +204,7 @@ namespace Backend.Services
 
             // Parsear la respuesta JSON
             var jsonResponse = JArray.Parse(responseBody);
-
+            Console.WriteLine(jsonResponse);
             // Asumimos que la primera tarea disponible es la siguiente
             var nextTaskId = jsonResponse.First?["id"]?.ToString();
 

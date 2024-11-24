@@ -25,11 +25,12 @@ public class OrdenController : ControllerBase
         {
             var orden = new Orden
             {
-                Id = Guid.NewGuid(),
                 Material = body.Material,
                 PesoKg = body.Cantidad,
-                PuntoRecolleccion = body.Zona,
-                Fecha = DateTime.UtcNow
+                PuntoRecoleccion = body.Zona,
+                Fecha = DateTime.UtcNow,
+                CaseId = body.CaseId,
+                UsuarioId = body.UsuarioId
             };
 
             await _ordenRepository.AddAsync(orden);

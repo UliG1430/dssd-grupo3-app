@@ -30,7 +30,7 @@ namespace api.Controllers
         {
             try
             {
-                var token = await _bonitaService.LoginAsync(request.Username, request.Password);
+                var token = await _bonitaService.LoginAsync(request.username, request.password);
                 if (token != null)
                 {
                     // Retornamos el token al frontend
@@ -386,7 +386,18 @@ namespace api.Controllers
 
                 if (result.ContainsKey("data"))
                 {
-                    return Ok(new { variableName, value = result["data"] });
+                    var data = result["data"];
+
+                    var variableDetails = new
+                    {
+                        CaseId = data?["case_id"]?.ToString(),
+                        Name = data?["name"]?.ToString(),
+                        Description = data?["description"]?.ToString(),
+                        Type = data?["type"]?.ToString(),
+                        Value = data?["value"]?.ToString(),
+                    };
+
+                    return Ok(variableDetails);
                 }
 
                 // Handle unexpected responses
@@ -405,8 +416,8 @@ namespace api.Controllers
     // DTO para el login
     public class BonitaLoginRequest
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        public string username { get; set; }
+        public string password { get; set; }
     }
 
     public class VariableValueDto
