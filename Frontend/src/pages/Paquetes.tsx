@@ -38,13 +38,16 @@ const Paquetes: React.FC = () => {
   }, []);
 
   const handleAnalizarPaquete = async (paquete: Paquete) => {
-    const caseId = paquete.caseId.toString();    
-    localStorage.setItem('caseId', caseId);
-    let nextTaskId = await getNextTaskId(caseId);
-    localStorage.setItem('nextTaskId', nextTaskId);
-    const taskInfo = await getTaskById(nextTaskId);
+      
+      const caseId = paquete.caseId.toString();    
+      localStorage.setItem('caseId', caseId);
+      let nextTaskId = await getNextTaskId(caseId);
+      localStorage.setItem('nextTaskId', nextTaskId);
+      const taskInfo = await getTaskById(nextTaskId);
+    
     if (taskInfo.name === 'Recibir paquetes') {
         await executeTask(nextTaskId);
+        await new Promise(resolve => setTimeout(resolve, 2000));
         nextTaskId = await getNextTaskId(caseId);
         await assignTask(nextTaskId, localStorage.getItem('idUserBonita')!);
         localStorage.setItem('nextTaskId', nextTaskId);
@@ -53,7 +56,11 @@ const Paquetes: React.FC = () => {
         nextTaskId = await getNextTaskId(caseId);
         localStorage.setItem('nextTaskId', nextTaskId);
     }
-    navigate(`/analizar-ordenes/${paquete.id}`);
+
+    if (taskInfo.name === 'Registrar resultado') {
+        navigate(`/registrar-pago/${caseId}`);
+    } else
+        navigate(`/analizar-ordenes/${paquete.id}`);
   };
 
   return (

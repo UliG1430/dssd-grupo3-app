@@ -24,6 +24,7 @@ const EntregarPaquete: React.FC = () => {
 
       const caseId = localStorage.getItem('caseId');
       if (caseId) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
         const nextTask = await getNextTaskId(caseId);
         console.log('Next task:', nextTask);
 

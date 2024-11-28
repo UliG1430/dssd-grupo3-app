@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
 import { getOrdenesByPaqueteId, updateOrdenState } from '../service/recoleccionService';
-import { executeTask, getNextTaskId, assignTask, setCaseVariable } from '../service/bonitaService';
+import { executeTask, getNextTaskId, assignTask, setCaseVariable, getTaskById } from '../service/bonitaService';
 import { updatePaquete } from '../service/paquetesService';
 
 interface Orden {
@@ -39,25 +39,28 @@ const AnalizarOrdenes: React.FC = () => {
 
   const handleAnalizarOrden = async (ordenId: number) => {
     try {
-      
       const nextTaskId = localStorage.getItem('nextTaskId');
       const bonitaUserId = localStorage.getItem('idUserBonita');
-      await assignTask(nextTaskId!, bonitaUserId!);
-      if (nextTaskId) {
-        await executeTask(nextTaskId);
-      }
-
-      const caseId = localStorage.getItem('caseId');
-      if (caseId) {
-        const nextTask = await getNextTaskId(caseId);
-        console.log('Next task:', nextTask);
-
-        
-        if (bonitaUserId) {
-          await assignTask(nextTask, bonitaUserId);
-          localStorage.setItem('nextTaskId', nextTask);
+      const taskInfo = await getTaskById(nextTaskId!);
+    
+      if (taskInfo.name === 'Seleccionar paquete') {
+        await assignTask(nextTaskId!, bonitaUserId!);
+        if (nextTaskId) {
+            await executeTask(nextTaskId);
         }
-      }
+
+        const caseId = localStorage.getItem('caseId');
+        if (caseId) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            const nextTask = await getNextTaskId(caseId);
+            console.log('Next task:', nextTask);
+        
+            if (bonitaUserId) {
+                await assignTask(nextTask, bonitaUserId);
+                localStorage.setItem('nextTaskId', nextTask);
+            }
+        }
+    }
 
       const orden = ordenes.find(o => o.id === ordenId);
       setSelectedOrden(orden || null);
@@ -75,16 +78,14 @@ const AnalizarOrdenes: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+
     if (selectedOrden && realPeso !== null) {
       const newState = selectedOrden.pesoKg === realPeso ? 'OK' : 'INV';
       await updateOrdenState(selectedOrden.id, newState);
 
       // Retrieve the orders again
       const ordenesData = await getOrdenesByPaqueteId(Number(paqueteId));
-      if (ordenesData.length === 0) {
-        await updatePaquete(Number(paqueteId), 'FIN');
-        navigate('/realizar-notificacion-pago');
-      }
+      
       setOrdenes(ordenesData);
 
       // Set the Bonita variable packagesLeft
@@ -93,11 +94,13 @@ const AnalizarOrdenes: React.FC = () => {
 
       const nextTaskId = localStorage.getItem('nextTaskId');
       if (nextTaskId) {
+        
         await executeTask(nextTaskId);
       }
 
       const caseId = localStorage.getItem('caseId');
       if (caseId) {
+        await new Promise(resolve => setTimeout(resolve, 2000));
         const nextTask = await getNextTaskId(caseId);
         console.log('nextTaskId:', nextTask);
 
@@ -108,7 +111,7 @@ const AnalizarOrdenes: React.FC = () => {
         }
       }
       if (!packagesLeft) 
-        navigate('/realizar-notificacion-pago');
+        navigate(`/registrar-resultado/${localStorage.getItem('caseId')}`);
 
     }
 }
