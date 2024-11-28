@@ -33,7 +33,7 @@ namespace Backend.Data
                 entity.Property(o => o.CaseId)
                       .IsRequired();
                 entity.Property(o => o.UsuarioId)
-                        .IsRequired();
+                      .IsRequired();
             });
 
             // PuntoRecoleccion Table
@@ -79,9 +79,27 @@ namespace Backend.Data
                 entity.Property(u => u.Password)
                       .IsRequired();
                 entity.Property(u => u.comenzoRecorrido)
-                        .IsRequired();
+                      .IsRequired();
                 entity.Property(u => u.caseId)
-                        .IsRequired();
+                      .IsRequired();
+                entity.HasData(
+                    new Usuario
+                    {
+                        Id = 1,
+                        UsuarioNombre = "walter.bates",
+                        Password = "bpm",
+                        comenzoRecorrido = false,
+                        caseId = 0
+                    },
+                    new Usuario
+                    {
+                        Id = 2,
+                        UsuarioNombre = "william.jobs",
+                        Password = "bpm",
+                        comenzoRecorrido = false,
+                        caseId = 0
+                    }
+                );
             });
         }
     }
