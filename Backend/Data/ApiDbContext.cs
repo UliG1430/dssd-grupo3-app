@@ -92,16 +92,43 @@ namespace Backend.Data
                 entity.Property(u => u.Password)
                       .IsRequired();
                 entity.Property(u => u.comenzoRecorrido)
-                        .IsRequired();
+                      .IsRequired();
                 entity.Property(u => u.caseId)
-                        .IsRequired();
+                      .IsRequired();
                 entity.Property(u => u.rol)
-                        .IsRequired();
+                      .IsRequired();
                 entity.Property(u => u.seleccionoPaquete)
-                        .IsRequired();
+                      .IsRequired();
                 entity.Property(u => u.paqueteId)
-                        .IsRequired();
+                      .IsRequired();
+
+                // Insertar los dos usuarios con caseId = 0
+                entity.HasData(
+                    new Usuario
+                    {
+                        Id = 1,
+                        UsuarioNombre = "walter.bates",
+                        Password = "bpm",
+                        comenzoRecorrido = false,
+                        caseId = 0,
+                        rol = "R", // Asignamos el rol "R"
+                        seleccionoPaquete = false,
+                        paqueteId = 0
+                    },
+                    new Usuario
+                    {
+                        Id = 2,
+                        UsuarioNombre = "william.jobs",
+                        Password = "bpm",
+                        comenzoRecorrido = false,
+                        caseId = 0,
+                        rol = "A", // Asignamos el rol "A"
+                        seleccionoPaquete = false,
+                        paqueteId = 0
+                    }
+                );
             });
+
 
             // Configure Paquete
             modelBuilder.Entity<Paquete>(entity =>
