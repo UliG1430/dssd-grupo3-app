@@ -11,13 +11,18 @@ import EsperarCobro from '../pages/EsperarCobro';
 import EntregarPaquete from '../pages/EntregarPaquete';
 import Paquetes from '../pages/Paquetes';
 import AnalizarOrdenes from '../pages/AnalizarOrdenes';
+import ProtectedRouteRedGlobal from '../components/ProtectedRouteRedGlobal';
+import HomeRedGlobal from '../pages/HomeRedGlobal'; 
+import LoginRedGlobal from '../pages/LoginRedGlobal';
 
 const AppRoutes: React.FC = () => {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/iniciar-sesion" element={<Login />} />
+
       <Route element={<ProtectedRoute />}>
+        <Route path="/red-global-recicladores" element={<LoginRedGlobal />} /> {/* Ruta para login en red global */}
         <Route path="/cargar-recoleccion" element={<CargarRecoleccion />} />
         <Route path="/comenzar-recoleccion" element={<StartRecoleccion />} /> {/* Add the new protected route */}
         <Route path="/visitar-punto" element={<VisitarPunto />} />
@@ -25,6 +30,9 @@ const AppRoutes: React.FC = () => {
         <Route path="/entregar-paquetes" element={<EntregarPaquete />} />
         <Route path="/paquetes" element={<Paquetes />} />
         <Route path="/analizar-ordenes/:paqueteId" element={<AnalizarOrdenes />} />
+      </Route>
+      <Route element={<ProtectedRouteRedGlobal />}>
+        <Route path="/home-red-global" element={<HomeRedGlobal />} />
       </Route>
     </Routes>
   );
