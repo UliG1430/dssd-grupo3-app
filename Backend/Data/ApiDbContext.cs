@@ -56,6 +56,16 @@ namespace Backend.Data
                       .ValueGeneratedOnAdd(); // Auto-increment
                 entity.Property(m => m.Nombre)
                       .IsRequired();
+                entity.Property(m => m.StockActual)
+                      .IsRequired()
+                      .HasDefaultValue(0); // Stock por defecto 0
+                entity.HasData(
+                    new Material { Id = 1, Nombre = "Madera", StockActual = 0 },
+                    new Material { Id = 2, Nombre = "Cartón", StockActual = 0 },
+                    new Material { Id = 3, Nombre = "Plástico", StockActual = 0 },
+                    new Material { Id = 4, Nombre = "Vidrio", StockActual = 0 },  // Otro material sugerido
+                    new Material { Id = 5, Nombre = "Metal", StockActual = 0 }    // Otro material sugerido
+                );
             });
 
             // Usuario Table
