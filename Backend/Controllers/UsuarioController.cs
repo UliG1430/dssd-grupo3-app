@@ -47,8 +47,14 @@ public class UsuarioController : ControllerBase
             }
 
             // Update the fields
-            usuario.caseId = updateUserDto.CaseId;
-            usuario.comenzoRecorrido = updateUserDto.ComenzoRecorrido;
+            if (updateUserDto.Rol.Equals('R'))
+            {
+                usuario.paqueteId = updateUserDto.PaqueteId;
+                usuario.seleccionoPaquete = updateUserDto.SeleccionoPaquete;
+            } else {
+                usuario.caseId = updateUserDto.CaseId;
+                usuario.comenzoRecorrido = updateUserDto.ComenzoRecorrido;
+            }
 
             // Save the changes
             _usuarioRepository.Update(usuario);

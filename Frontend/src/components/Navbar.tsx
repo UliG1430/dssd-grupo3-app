@@ -4,6 +4,7 @@ import { logoutBonita } from '../service/bonitaService';
 
 const Navbar: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -11,13 +12,20 @@ const Navbar: React.FC = () => {
     if (token) {
       setIsLoggedIn(true);
     }
+    const userRole = localStorage.getItem('userRol');
+    if (userRole === 'A') {
+      setIsAdmin(true);
+    }
   }, []);
 
   const handleLogout = async () => {
     try {
       await logoutBonita();
       localStorage.removeItem('bonitaToken');
+      localStorage.removeItem('userRol');
       setIsLoggedIn(false);
+      setIsAdmin(false);
+      window.location.reload();
       navigate('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -31,6 +39,14 @@ const Navbar: React.FC = () => {
           Ecocycle
         </Link>
         <div className="space-x-4">
+          {isAdmin && (
+            <Link
+              to="/paquetes"
+              className="text-white hover:bg-green-700 px-3 py-2 rounded-md text-lg"
+            >
+              Paquetes
+            </Link>
+          )}
           {!isLoggedIn ? (
             <Link
               to="/iniciar-sesion"

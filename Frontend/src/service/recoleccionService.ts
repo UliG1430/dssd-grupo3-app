@@ -73,3 +73,45 @@ export const addOrden = async (data: any) => {
       throw error;
     }
   };
+
+  export const getOrdenesByPaqueteId = async (paqueteId: number) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Orden/ByPaquete/${paqueteId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Error al obtener las ordenes`);
+      }
+  
+      const data = await response.json();
+      return data; // Retornamos la respuesta si fue exitosa
+    } catch (error) {
+      console.error('Error en la llamada a getOrdenesByPaqueteId:', error);
+      throw error;
+    }
+  }
+
+  export const updateOrdenState = async (id: number, Estado: string) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Orden/UpdateState/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ Estado }),
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Error al actualizar la orden: ${response.status}`);
+      }
+  
+      console.log(`Se actualizo la orden: ${id}`);
+    } catch (error) {
+      console.error('Error en la llamada a updateOrdenState:', error);
+      throw error;
+    }
+  }

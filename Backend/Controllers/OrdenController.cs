@@ -27,10 +27,13 @@ public class OrdenController : ControllerBase
             {
                 Material = body.Material,
                 PesoKg = body.Cantidad,
-                PuntoRecoleccion = body.Zona,
+                PuntoRecoleccionId = body.Zona,
                 Fecha = DateTime.UtcNow,
                 CaseId = body.CaseId,
-                UsuarioId = body.UsuarioId
+                UsuarioId = body.UsuarioId,
+                paqueteId = body.PaqueteId,
+                revisado = body.Revisado,
+                estado = body.Estado
             };
 
             await _ordenRepository.AddAsync(orden);
@@ -42,4 +45,55 @@ public class OrdenController : ControllerBase
             return BadRequest(e.Message);
         }
     }
+
+    // Get Ordenes by Paquete Id
+    [HttpGet("ByPaquete/{paqueteId}")]
+    public async Task<IActionResult> GetOrdenesByPaqueteId(int paqueteId)
+    {
+        try
+        {
+            var ordenes = await _ordenRepository.GetByPaqueteIdAsync(paqueteId);
+
+            if (ordenes == null)
+            {
+                return Ok(new List<Orden>());
+            }
+
+            return Ok(ordenes);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { message = "Error retrieving ordenes.", error = e.Message });
+        }
+    }
+
+    // New Update Orden State
+    [HttpPut("UpdateState/{id}")]
+    public async Task<IActionResult> UpdateOrdenState(int id, [FromBody] UpdateOrdenStateDto body)
+    {
+        try
+        {
+            // Find the existing Orden
+            var orden = await _ordenRepository.GetByIdAsync(id);
+            if (orden == null)
+            {
+                return NotFound(new { message = $"Orden with Id {id} not found." });
+            }
+
+            // Update the State field
+            orden.estado = body.Estado;
+
+            // Save changes
+            _ordenRepository.Update(orden);
+            await _ordenRepository.SaveChangesAsync();
+
+            return Ok(new { message = "Orden state updated successfully", orden });
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { message = "Error updating orden state.", error = e.Message });
+        }
+    }
+
+
 }

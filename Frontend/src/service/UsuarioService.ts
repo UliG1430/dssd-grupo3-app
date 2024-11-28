@@ -4,6 +4,9 @@ interface Usuario {
     Password: string;
     comenzoRecorrido: boolean;
     caseId: number;
+    rol: string;
+    seleccionoPaquete: boolean;
+    paqueteId: number;
   }
 
   export const getUsuarioByUsername = async (username: string): Promise<Usuario> => {
@@ -28,14 +31,14 @@ interface Usuario {
     }
   };
 
-  export const updateUsuarioById = async (id: number,CaseId: number, ComenzoRecorrido: boolean): Promise<void> => {
+  export const updateUsuarioById = async (id: number,CaseId: number, ComenzoRecorrido: boolean, Rol: string, SeleccionoPaquete: boolean, PaqueteId: number): Promise<void> => {
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Usuario/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ CaseId , ComenzoRecorrido })
+        body: JSON.stringify({ CaseId , ComenzoRecorrido, Rol, PaqueteId, SeleccionoPaquete })
       });
 
 

@@ -6,6 +6,7 @@ import Button from '../components/Button';
 import { getMateriales, addOrden } from '../service/recoleccionService';
 import { executeTask, getTaskById, assignTask, setCaseVariable, getNextTaskId } from '../service/bonitaService';
 import { useNavigate } from 'react-router-dom';
+import { ClipLoader } from 'react-spinners';
 
 interface RecoleccionData {
   material: string;
@@ -16,6 +17,7 @@ const CargarRecoleccion: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+  const [isProcessing, setIsProcessing] = useState(false);
   const [data, setData] = useState<RecoleccionData>({ material: '', cantidad: 0 });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [materiales, setMateriales] = useState<{ value: string | number; label: string }[]>([]);
@@ -55,15 +57,19 @@ const CargarRecoleccion: React.FC = () => {
   };
 
   const handleKeepRecolecting = async () => {
+    setIsProcessing(true);
     setIsModalOpen(false);
     await setCaseVariable(localStorage.getItem('caseId')!, 'pointsLeft', true);
     await proceedToNextTask();
+    setIsProcessing(false);
   };
 
   const handleFinishRecolecting = async () => {
+    setIsProcessing(true);
     setIsModalOpen(false);
     await setCaseVariable(localStorage.getItem('caseId')!, 'pointsLeft', false);
     await proceedToNextTask();
+    setIsProcessing(false);
   };
 
   const proceedToNextTask = async () => {
@@ -73,6 +79,9 @@ const CargarRecoleccion: React.FC = () => {
       'Cantidad': data.cantidad,
       'UsuarioId': localStorage.getItem('idUser'),
       'CaseId': localStorage.getItem('caseId'),
+      'PaqueteId': localStorage.getItem('paqueteId'),
+      'Revisado': false,
+      'Estado': 'ENV',
     }); // Add the order
     try {
       const caseId = localStorage.getItem('caseId');
@@ -92,7 +101,7 @@ const CargarRecoleccion: React.FC = () => {
       if (taskInfo.name === 'Visitar punto') {
         navigate('/visitar-punto');
       } else {
-        navigate('/esperar-cobro');
+        navigate('/entregar-paquetes');
       }
     } catch (error) {
       console.error('Error al procesar la siguiente tarea:', error);
@@ -122,12 +131,18 @@ const CargarRecoleccion: React.FC = () => {
       <div className="bg-white p-8 rounded-md shadow-md w-full max-w-md">
         <h2 className="text-2xl font-bold mb-6 text-center">Cargar Recolección</h2>
         {error && <p className="text-red-500">{error}</p>}
+        {!isProcessing && (
         <GenericForm
           fields={formFields}
           onSubmit={handleComenzarRecoleccion}
           submitButtonText="Realizar Orden"
           isSubmitting={isSubmitting}
-        />
+        />)}
+      {isProcessing && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <ClipLoader color="#ffffff" size={50} />
+        </div>
+      )}
       </div>
 
       <Modal isOpen={isModalOpen} onClose={handleModalClose} title="¿Qué desea hacer?">
@@ -138,6 +153,8 @@ const CargarRecoleccion: React.FC = () => {
           Terminar recolección
         </Button>
       </Modal>
+
+      
     </div>
   );
 };

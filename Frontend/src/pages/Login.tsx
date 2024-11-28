@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import InputField from '../components/InputField';
 import { loginBonita, getUsuarioIdByUsername, getNextTaskId, getTaskById } from '../service/bonitaService';
 import { getUsuarioByUsername } from '../service/UsuarioService';
+import { getPaqueteByCaseId } from '../service/paquetesService';
 
 interface LoginData {
   username: string;
@@ -23,24 +24,33 @@ const LoginForm: React.FC = () => {
         localStorage.setItem('idUserBonita', idUserBonita.toString());
         const idUser = await getUsuarioByUsername(data.username);
         localStorage.setItem('idUser', idUser.id.toString());
+        localStorage.setItem('userRol', idUser.rol);
         
-        if (!idUser.comenzoRecorrido)
-            navigate('/comenzar-recoleccion');
-        else {
-            localStorage.setItem('caseId', idUser.caseId.toString());
-            const nextTask = await getNextTaskId(idUser.caseId.toString());
-            localStorage.setItem('nextTaskId', nextTask);
-            const taskInfo = await getTaskById(nextTask);
-            if (taskInfo.name === 'Visitar punto') {
-                navigate('/visitar-punto');
-            } else {
-                if (taskInfo.name === 'Realizar orden') {
-                    navigate('/cargar-recoleccion');
-                }
-            }
+        if (idUser.rol === 'R') {
+          if (!idUser.comenzoRecorrido)
+              navigate('/comenzar-recoleccion');
+          else {
+              const paquete = await getPaqueteByCaseId(idUser.caseId.toString());
+              localStorage.setItem('paqueteId', paquete.id.toString());
+              localStorage.setItem('caseId', idUser.caseId.toString());
+              const nextTask = await getNextTaskId(idUser.caseId.toString());
+              localStorage.setItem('nextTaskId', nextTask);
+              const taskInfo = await getTaskById(nextTask);
+              if (taskInfo.name === 'Visitar punto') {
+                  navigate('/visitar-punto');
+              } else {
+                  if (taskInfo.name === 'Realizar orden') {
+                      navigate('/cargar-recoleccion');
+                  } else {
+                    navigate('/esperar-cobro');
+                  }
+              }
+          }
+        } else {
+          navigate('/');
         }
       }
-      //window.location.reload(); //para actualizar la navbar
+      window.location.reload(); //para actualizar la navbar
     } catch (error) {
       alert('Hubo un problema al iniciar sesión');
     }

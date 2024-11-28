@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProcessId, startProcessById, getNextTaskId, assignTask, executeTask, setCaseVariable } from '../service/bonitaService';
 import { ClipLoader } from 'react-spinners';
+import { addPaquete, getPaqueteByCaseId } from '../service/paquetesService';
 import { updateUsuarioById } from '../service/UsuarioService';
 
 const StartRecoleccion: React.FC = () => {
@@ -15,7 +16,10 @@ const StartRecoleccion: React.FC = () => {
       const caseId = await startProcessById(processId);
       console.log('Case ID:', caseId);
       localStorage.setItem('caseId', caseId.toString());
-      await updateUsuarioById(Number(localStorage.getItem('idUser')!), caseId, true);
+      await updateUsuarioById(Number(localStorage.getItem('idUser')!), caseId, true, 'R', false, 1);
+      await addPaquete(caseId, 'CRE');
+      const paquete = await getPaqueteByCaseId(caseId.toString());
+      localStorage.setItem('paqueteId', paquete.id.toString());
       // Add a delay before calling getNextTask
       await new Promise(resolve => setTimeout(resolve, 2000));
 
