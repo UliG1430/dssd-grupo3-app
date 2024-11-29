@@ -6,7 +6,7 @@ const getBonitaToken = () => {
 
 export const loginBonita = async (username: string, password: string) => {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/Login`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/Login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -31,7 +31,7 @@ export const loginBonita = async (username: string, password: string) => {
 export const logoutBonita = async () => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/Logout`, {
+    await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/Logout`, {
       method: 'GET',
       headers: {
         'X-Bonita-API-Token': token,
@@ -47,7 +47,7 @@ export const logoutBonita = async () => {
 export const getProcessId = async (processName: string) => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/process/${processName}`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/process/${processName}`, {
       method: 'GET',
       headers: {
         'X-Bonita-API-Token': token,
@@ -71,7 +71,7 @@ export const getProcessId = async (processName: string) => {
 export const startProcessById = async (processId: number) => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/startprocess/${processId}`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/startprocess/${processId}`, {
       method: 'GET',
       headers: {
         'X-Bonita-API-Token': token,
@@ -95,8 +95,8 @@ export const startProcessById = async (processId: number) => {
 export const getNextTaskId = async (caseId: string): Promise<any> => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    console.log(`${import.meta.env.VITE_API_BASE_URL}/Bonita/getNextTask/${caseId}`);
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/getNextTask/${caseId}`, {
+    console.log(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/getNextTask/${caseId}`);
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/getNextTask/${caseId}`, {
       method: 'GET',
       headers: {
       'X-Bonita-API-Token': token,
@@ -120,7 +120,7 @@ export const getNextTaskId = async (caseId: string): Promise<any> => {
 export const assignTask = async (taskId: string, userId: string): Promise<void> => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/task/${taskId}/assign/${userId}`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/task/${taskId}/assign/${userId}`, {
       method: 'PUT',
       headers: {
         'X-Bonita-API-Token': token,
@@ -142,7 +142,7 @@ export const assignTask = async (taskId: string, userId: string): Promise<void> 
 export const executeTask = async (taskId: string): Promise<void> => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/task/${taskId}/execute`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/task/${taskId}/execute`, {
       method: 'POST',
       headers: {
         'X-Bonita-API-Token': token,
@@ -164,7 +164,7 @@ export const executeTask = async (taskId: string): Promise<void> => {
 export const setCaseVariable = async (caseId: string, variableName: string, value: boolean): Promise<void> => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/case/${caseId}/variable/${variableName}`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/case/${caseId}/variable/${variableName}`, {
       method: 'PUT',
       headers: {
         'X-Bonita-API-Token': token,
@@ -190,7 +190,7 @@ export const setCaseVariable = async (caseId: string, variableName: string, valu
 export const getUsuarioIdByUsername = async (username: string): Promise<number> => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/${username}/id`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/${username}/id`, {
       method: 'GET',
       headers: {
         'X-Bonita-API-Token': token,
@@ -214,7 +214,7 @@ export const getUsuarioIdByUsername = async (username: string): Promise<number> 
 export const getTaskById = async (taskId: string): Promise<any> => {
   try {
     const token: string = getBonitaToken() != null ? getBonitaToken()! : '';
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Bonita/task/${taskId}`, {
+    const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Bonita/task/${taskId}`, {
       method: 'GET',
       headers: {
         'X-Bonita-API-Token': token,

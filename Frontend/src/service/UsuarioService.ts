@@ -11,7 +11,7 @@ interface Usuario {
 
   export const getUsuarioByUsername = async (username: string): Promise<Usuario> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Usuario/${username}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Usuario/${username}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ interface Usuario {
 
   export const updateUsuarioById = async (id: number,CaseId: number, ComenzoRecorrido: boolean, Rol: string, SeleccionoPaquete: boolean, PaqueteId: number): Promise<void> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Usuario/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Usuario/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -14,6 +14,7 @@ import AnalizarOrdenes from '../pages/AnalizarOrdenes';
 import ProtectedRouteRedGlobal from '../components/ProtectedRouteRedGlobal';
 import HomeRedGlobal from '../pages/HomeRedGlobal'; 
 import LoginRedGlobal from '../pages/LoginRedGlobal';
+import Necesidades from '../pages/Necesidades';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ const AppRoutes: React.FC = () => {
       </Route>
       <Route element={<ProtectedRouteRedGlobal />}>
         <Route path="/home-red-global" element={<HomeRedGlobal />} />
+        <Route path="/necesidades" element={<Necesidades/>} />
       </Route>
     </Routes>
   );

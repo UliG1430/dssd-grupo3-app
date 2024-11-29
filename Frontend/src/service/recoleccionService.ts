@@ -13,7 +13,7 @@ interface PuntoRecoleccion {
 
 export const addOrden = async (data: any) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Orden/AddOrden`, {  // Usamos la URL desde el .env
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Orden/AddOrden`, {  // Usamos la URL desde el .env
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,7 +34,7 @@ export const addOrden = async (data: any) => {
   
   export const getMateriales = async (): Promise<Material[]> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Material/materiales`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Material/materiales`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -55,7 +55,7 @@ export const addOrden = async (data: any) => {
 
   export const getPuntosRecoleccion = async (): Promise<PuntoRecoleccion[]> => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/PuntoRecoleccion/PuntosRecoleccion`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/PuntoRecoleccion/PuntosRecoleccion`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ export const addOrden = async (data: any) => {
 
   export const getOrdenesByPaqueteId = async (paqueteId: number) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Orden/ByPaquete/${paqueteId}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Orden/ByPaquete/${paqueteId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ export const addOrden = async (data: any) => {
 
   export const updateOrdenState = async (id: number, Estado: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Orden/UpdateState/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Orden/UpdateState/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,6 @@
 export const getPaqueteByCaseId = async (caseId: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Paquete/${caseId}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Paquete/${caseId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -21,7 +21,7 @@ export const getPaqueteByCaseId = async (caseId: string) => {
 
 export const updatePaquete = async (id: number, state: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Paquete/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Paquete/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -42,7 +42,7 @@ export const updatePaquete = async (id: number, state: string) => {
 
   export const addPaquete = async (caseId: number, state: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Paquete/AddPaquete`, {  // Usamos la URL desde el .env
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Paquete/AddPaquete`, {  // Usamos la URL desde el .env
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +63,7 @@ export const updatePaquete = async (id: number, state: string) => {
 
   export const getPaquetesByState = async (state: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/Paquete/byState/${state}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Paquete/byState/${state}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
