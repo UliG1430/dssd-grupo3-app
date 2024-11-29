@@ -151,6 +151,36 @@ namespace Backend.Data
                 entity.Property(ue => ue.Fecha)
                       .IsRequired(); // Fecha is required
             });
+
+            modelBuilder.Entity<NotificacionPago>(entity =>
+            {
+                entity.HasKey(np => np.Id);
+                entity.Property(np => np.Id)
+                      .ValueGeneratedOnAdd(); // Auto-increment
+                entity.Property(np => np.cantidad)
+                      .IsRequired(); // cantidad is required
+                entity.Property(np => np.caseId)
+                      .IsRequired(); // caseId is required
+            });
+
+            modelBuilder.Entity<Evaluacion>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id)
+                      .ValueGeneratedOnAdd(); // Auto-increment
+                entity.Property(e => e.caseId)
+                      .IsRequired(); // CaseId is required
+                entity.Property(e => e.state)
+                      .IsRequired(); // Fecha is required
+                entity.Property(e => e.observaciones)
+                      .IsRequired(); // Puntaje is required
+                entity.Property(e => e.cantOrdenes)
+                        .IsRequired(); // Puntaje is required
+                entity.Property(e => e.cantOrdenesOk)
+                        .IsRequired(); // Puntaje is required
+                entity.Property(e => e.cantOrdenesMal)
+                        .IsRequired(); // Puntaje is required
+            });
         }
     }
 }

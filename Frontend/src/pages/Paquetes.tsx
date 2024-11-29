@@ -58,7 +58,7 @@ const Paquetes: React.FC = () => {
     }
 
     if (taskInfo.name === 'Registrar resultado') {
-        navigate(`/registrar-pago/${caseId}`);
+        navigate(`/registrar-resultado/${caseId}`);
     } else
         navigate(`/analizar-ordenes/${paquete.id}`);
   };

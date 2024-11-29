@@ -4,6 +4,12 @@ import { getNextTaskId, executeTask, assignTask } from '../service/bonitaService
 import { updatePaquete, getPaqueteByCaseId } from '../service/paquetesService';
 import { getUsuarioByUsername } from '../service/UsuarioService';
 import Button from '../components/Button';
+import { addNotificacionPago } from '../service/notificacionPagoService';
+
+interface NotificacionPago {
+    CaseId: number;
+    Cantidad: number;
+  }
 
 const RegistrarResultado: React.FC = () => {
   const { caseId } = useParams<{ caseId: string }>();
@@ -31,6 +37,10 @@ const RegistrarResultado: React.FC = () => {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     try {
+      console.log('Case ID:', caseId, "Pago:", pago);
+      const data = { "CaseId": Number(caseId), "Cantidad": pago! };
+      await addNotificacionPago(data);      
+    
       const nextTaskId = localStorage.getItem('nextTaskId');
       if (nextTaskId) {
         await executeTask(nextTaskId);
@@ -38,13 +48,13 @@ const RegistrarResultado: React.FC = () => {
 
       if (caseId) {
         const paquete = await getPaqueteByCaseId(caseId);
-        await updatePaquete(paquete, 'FIN');
+        await updatePaquete(paquete.id, 'FIN');
       }
 
       const usuario = await getUsuarioByUsername('walter.bates');
       await new Promise(resolve => setTimeout(resolve, 2000));
       const nextTask = await getNextTaskId(usuario.caseId.toString());
-      await assignTask(nextTask.id, usuario.id.toString());
+      await assignTask(nextTask, usuario.id.toString());
 
       navigate('/paquetes'); // Replace with the actual route you want to navigate to
     } catch (error) {
