@@ -69,6 +69,8 @@ namespace Backend.Data
                       .ValueGeneratedOnAdd(); // Auto-increment
                 entity.Property(m => m.Nombre)
                       .IsRequired();
+                entity.Property(m => m.CodMaterial)
+                        .IsRequired();
                 entity.Property(m => m.StockActual)
                       .IsRequired()
                       .HasDefaultValue(0); // Stock por defecto 0
