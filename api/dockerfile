@@ -15,10 +15,10 @@ COPY . .
 
 # Establecer las variables de entorno necesarias
 ENV FLASK_APP=run.py
-ENV FLASK_ENV=production
+ENV FLASK_ENV=production  
 
 # Exponer el puerto que usará la aplicación
 EXPOSE 8000
 
 # Comando para ejecutar Gunicorn con la aplicación
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "run:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:8000", "--access-logfile", "-", "run:app"]

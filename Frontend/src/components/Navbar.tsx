@@ -9,10 +9,11 @@ const Navbar: React.FC = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('bonitaToken');
+    const userRole = localStorage.getItem('userRol');
+
     if (token) {
       setIsLoggedIn(true);
     }
-    const userRole = localStorage.getItem('userRol');
     if (userRole === 'A') {
       setIsAdmin(true);
     }
@@ -20,12 +21,18 @@ const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      // Llamar al servicio de logout para realizar una limpieza si es necesario
       await logoutBonita();
+
+      // Limpiar localStorage y el estado
       localStorage.removeItem('bonitaToken');
       localStorage.removeItem('userRol');
+
+      // Actualizar estado local
       setIsLoggedIn(false);
       setIsAdmin(false);
-      window.location.reload();
+
+      // Redirigir al home o página principal
       navigate('/');
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -40,12 +47,20 @@ const Navbar: React.FC = () => {
         </Link>
         <div className="space-x-4">
           {isAdmin && (
-            <Link
-              to="/paquetes"
-              className="text-white hover:bg-green-700 px-3 py-2 rounded-md text-lg"
-            >
-              Paquetes
-            </Link>
+            <>
+              <Link
+                to="/paquetes"
+                className="text-white hover:bg-green-700 px-3 py-2 rounded-md text-lg"
+              >
+                Paquetes
+              </Link>
+              <Link
+                to="/red-global-recicladores"
+                className="text-white hover:bg-green-700 px-3 py-2 rounded-md text-lg"
+              >
+                Red Global de Recicladores
+              </Link>
+            </>
           )}
           {!isLoggedIn ? (
             <Link
