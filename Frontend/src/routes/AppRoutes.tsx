@@ -11,6 +11,7 @@ import EsperarCobro from '../pages/EsperarCobro';
 import EntregarPaquete from '../pages/EntregarPaquete';
 import Paquetes from '../pages/Paquetes';
 import AnalizarOrdenes from '../pages/AnalizarOrdenes';
+import RegistrarResultado from '../pages/RegistrarResultado';
 import ProtectedRouteRedGlobal from '../components/ProtectedRouteRedGlobal';
 import HomeRedGlobal from '../pages/HomeRedGlobal'; 
 import LoginRedGlobal from '../pages/LoginRedGlobal';
@@ -31,6 +32,7 @@ const AppRoutes: React.FC = () => {
         <Route path="/entregar-paquetes" element={<EntregarPaquete />} />
         <Route path="/paquetes" element={<Paquetes />} />
         <Route path="/analizar-ordenes/:paqueteId" element={<AnalizarOrdenes />} />
+        <Route path="/registrar-resultado/:caseId" element={<RegistrarResultado />} />
       </Route>
       <Route element={<ProtectedRouteRedGlobal />}>
         <Route path="/home-red-global" element={<HomeRedGlobal />} />
