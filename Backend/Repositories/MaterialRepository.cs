@@ -20,6 +20,10 @@ namespace Backend.Repositories
             return await _context.Materiales.FindAsync(id);
         }
 
+        public async Task<Material> GetByCodeAsync(string codMaterial)
+        {
+            return await _context.Materiales.FirstOrDefaultAsync(m => m.CodMaterial == codMaterial);
+        }
         public void Update(Material material)
         {
             _context.Materiales.Update(material);

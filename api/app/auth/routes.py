@@ -1,8 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import create_access_token
-from werkzeug.security import check_password_hash  # Importa esta función
 from app.models.user import User
-from flasgger import Swagger
 
 auth_bp = Blueprint('auth_bp', __name__)
 
@@ -36,6 +34,10 @@ def login():
               type: string
               description: The JWT access token.
               example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            rol:
+              type: string
+              description: The role of the user.
+              example: "A"
       401:
         description: Unauthorized - Bad username or password.
         schema:
@@ -52,10 +54,12 @@ def login():
     # Busca al usuario por su nombre de usuario
     user = User.query.filter_by(username=username).first()
     
-    # Verifica si el usuario existe y si la contraseña es correcta
-    if not user or not check_password_hash(user.password, password):
+    # Verifica si el usuario existe y si la contraseña es correcta (texto plano)
+    if not user or user.password != password:
         return jsonify({"msg": "Bad username or password"}), 401
 
     # Si la autenticación es exitosa, crea un JWT token
-    access_token = create_access_token(identity=user.id)
-    return jsonify(access_token=access_token), 200
+    access_token = create_access_token(identity=str(user.id))  # Convertir user.id a string
+
+    # Devuelve el token y el rol del usuario
+    return jsonify(access_token=access_token, rol=user.rol), 200
