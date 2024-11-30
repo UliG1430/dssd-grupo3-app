@@ -15,7 +15,7 @@ namespace Backend.Repositories
         {
             return await _context.Set<TEntity>().ToListAsync();
         }
-        public async Task<TEntity?> GetAsync(Guid id)
+        public async Task<TEntity?> GetAsync(int id)
         {
             return await _context.Set<TEntity>().FindAsync(id);
         }

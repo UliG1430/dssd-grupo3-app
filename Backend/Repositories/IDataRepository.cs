@@ -5,7 +5,7 @@ namespace Backend.Repositories
     public interface IDataRepository<TEntity>
     {
         Task<IEnumerable<TEntity>> GetAllAsync();
-        Task<TEntity?> GetAsync(Guid id);
+        Task<TEntity?> GetAsync(int id);
         Task<TEntity> AddAsync(TEntity entity);
         Task<TEntity> UpdateAsync(TEntity dbEntity, TEntity entity);
         void DeleteAsync(Guid id);
