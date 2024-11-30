@@ -37,5 +37,16 @@ namespace Backend.Repositories
         {
             await _dbContext.SaveChangesAsync();
         }
+
+        public async Task<IEnumerable<Orden>> GetOrdenesForUsuarioInLastTwoWeeksAsync(int idUsuario)
+        {
+            var twoWeeksAgo = DateTime.UtcNow.AddDays(-14); // Use UTC
+            var now = DateTime.UtcNow;
+
+            return await _context.Set<Orden>()
+                .Where(o => o.UsuarioId == idUsuario && o.Fecha >= twoWeeksAgo && o.Fecha <= now)
+                .ToListAsync();
+        }
+
     }
 }

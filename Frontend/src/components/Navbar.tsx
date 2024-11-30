@@ -49,6 +49,12 @@ const Navbar: React.FC = () => {
           {isAdmin && (
             <>
               <Link
+                to="/evaluaciones"
+                className="text-white hover:bg-green-700 px-3 py-2 rounded-md text-lg"
+              >
+                Evaluaciones
+              </Link>
+              <Link
                 to="/paquetes"
                 className="text-white hover:bg-green-700 px-3 py-2 rounded-md text-lg"
               >

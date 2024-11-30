@@ -42,7 +42,11 @@ const LoginForm: React.FC = () => {
                   if (taskInfo.name === 'Realizar orden') {
                       navigate('/cargar-recoleccion');
                   } else {
-                    navigate('/esperar-cobro');
+                    if (taskInfo.name === "Recibir notificación de pago") {
+                      navigate('/esperar-cobro');
+                    } else {
+                      navigate('/esperar-evaluacion');
+                    }
                   }
               }
           }

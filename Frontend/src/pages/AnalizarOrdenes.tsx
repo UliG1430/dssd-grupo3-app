@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Button from '../components/Button';
 import Modal from '../components/Modal';
-import { getOrdenesByPaqueteId, updateOrdenState } from '../service/recoleccionService';
+import { getOrdenesByPaqueteId, updateOrdenState, updateStockMaterial } from '../service/recoleccionService';
 import { executeTask, getNextTaskId, assignTask, setCaseVariable, getTaskById } from '../service/bonitaService';
 import { updatePaquete } from '../service/paquetesService';
 
@@ -82,7 +82,7 @@ const AnalizarOrdenes: React.FC = () => {
     if (selectedOrden && realPeso !== null) {
       const newState = selectedOrden.pesoKg === realPeso ? 'OK' : 'INV';
       await updateOrdenState(selectedOrden.id, newState);
-
+      await updateStockMaterial(Number(selectedOrden.material), { "Cantidad": realPeso});
       // Retrieve the orders again
       const ordenesData = await getOrdenesByPaqueteId(Number(paqueteId));
       

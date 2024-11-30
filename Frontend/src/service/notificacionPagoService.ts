@@ -2,7 +2,7 @@
 
 export const getNotificacionPagoByCaseId = async (caseId: string) => {
     try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/NotificacionPago/ByCaseId/${caseId}`, {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/NotificacionPago/ByCaseId/${caseId}`, {
             method: 'GET',
             headers: {
             'Content-Type': 'application/json',
@@ -20,7 +20,7 @@ export const getNotificacionPagoByCaseId = async (caseId: string) => {
 
 export const addNotificacionPago = async (notificacionPago: any) => {
     try {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/NotificacionPago`, {
+        const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/NotificacionPago`, {
             method: 'POST',
             headers: {
             'Content-Type': 'application/json',
