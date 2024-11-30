@@ -231,3 +231,71 @@ def tomar_necesidad(necesidad_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": "Error al tomar la necesidad", "error": str(e)}), 500
+
+@protected_bp.route('/ordenes-distribucion', methods=['GET'])
+@jwt_required()
+def get_ordenes_distribucion():
+    try:
+        # Consultar todas las órdenes de distribución desde la base de datos
+        ordenes = OrdenDistribucion.query.all()
+
+        # Serializar las órdenes para devolverlas en formato JSON
+        ordenes_list = [
+            {
+                "id": orden.id,
+                "necesidad_id": orden.necesidad_id,
+                "estado": orden.estado
+            }
+            for orden in ordenes
+        ]
+
+        # Responder con las órdenes en formato JSON
+        return jsonify(ordenes_list), 200
+    except Exception as e:
+        # Manejo de errores con rollback en caso de excepción
+        db.session.rollback()
+        return jsonify({"msg": "Error al obtener las órdenes de distribución", "error": str(e)}), 500
+    
+@protected_bp.route('/ordenes_distribucion/tomar/<int:orden_id>', methods=['PATCH'])
+@jwt_required()
+def tomar_orden_distribucion(orden_id):
+    try:
+        # Buscar la orden de distribución por ID
+        orden = OrdenDistribucion.query.get(orden_id)
+        if not orden:
+            return jsonify({"msg": "Orden de distribución no encontrada"}), 404
+
+        # Verificar si ya está en estado "en proceso"
+        if orden.estado == 'en proceso':
+            return jsonify({"msg": "La orden ya está en proceso"}), 409
+
+        # Cambiar el estado de la orden a "en proceso"
+        orden.estado = 'en proceso'
+        db.session.commit()
+
+        return jsonify({"msg": "Orden de distribución actualizada a 'en proceso'"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al actualizar la orden de distribución", "error": str(e)}), 500
+
+
+@protected_bp.route('/ordenes_distribucion/confirmar/<int:orden_id>', methods=['PATCH'])
+@jwt_required()
+def confirmar_entrega_orden_distribucion(orden_id):
+    """
+    Cambiar el estado de una orden de distribución a "entregada".
+    """
+    try:
+        orden = OrdenDistribucion.query.get(orden_id)
+        if not orden:
+            return jsonify({"msg": "Orden no encontrada"}), 404
+
+        if orden.estado != "en proceso":
+            return jsonify({"msg": f"La orden no puede ser confirmada porque está en estado {orden.estado}"}), 400
+
+        orden.estado = "distribuida"
+        db.session.commit()
+        return jsonify({"msg": "Orden confirmada como entregada", "orden_id": orden.id}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al confirmar la entrega", "error": str(e)}), 500

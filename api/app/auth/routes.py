@@ -34,6 +34,10 @@ def login():
               type: string
               description: The JWT access token.
               example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+            rol:
+              type: string
+              description: The role of the user.
+              example: "A"
       401:
         description: Unauthorized - Bad username or password.
         schema:
@@ -56,4 +60,6 @@ def login():
 
     # Si la autenticación es exitosa, crea un JWT token
     access_token = create_access_token(identity=str(user.id))  # Convertir user.id a string
-    return jsonify(access_token=access_token), 200
+
+    # Devuelve el token y el rol del usuario
+    return jsonify(access_token=access_token, rol=user.rol), 200
