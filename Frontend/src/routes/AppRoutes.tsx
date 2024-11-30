@@ -5,7 +5,7 @@ import Home from '../pages/Home';
 import ProtectedRoute from '../components/ProtectedRoute';
 import Login from '../pages/Login';
 import CargarRecoleccion from '../pages/CargarRecoleccion';
-import StartRecoleccion from '../pages/StartRecoleccion'; // Import the new page
+import StartRecoleccion from '../pages/StartRecoleccion';
 import VisitarPunto from '../pages/VisitarPunto';
 import EsperarCobro from '../pages/EsperarCobro';
 import EntregarPaquete from '../pages/EntregarPaquete';
@@ -13,9 +13,10 @@ import Paquetes from '../pages/Paquetes';
 import AnalizarOrdenes from '../pages/AnalizarOrdenes';
 import RegistrarResultado from '../pages/RegistrarResultado';
 import ProtectedRouteRedGlobal from '../components/ProtectedRouteRedGlobal';
-import HomeRedGlobal from '../pages/HomeRedGlobal'; 
+import HomeRedGlobal from '../pages/HomeRedGlobal';
 import LoginRedGlobal from '../pages/LoginRedGlobal';
 import Necesidades from '../pages/Necesidades';
+import OrdenesDistribucion from '../pages/OrdenesDistribucion'; // Importamos la nueva página
 
 const AppRoutes: React.FC = () => {
   return (
@@ -24,9 +25,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/iniciar-sesion" element={<Login />} />
 
       <Route element={<ProtectedRoute />}>
-        <Route path="/red-global-recicladores" element={<LoginRedGlobal />} /> {/* Ruta para login en red global */}
+        <Route path="/red-global-recicladores" element={<LoginRedGlobal />} />
         <Route path="/cargar-recoleccion" element={<CargarRecoleccion />} />
-        <Route path="/comenzar-recoleccion" element={<StartRecoleccion />} /> {/* Add the new protected route */}
+        <Route path="/comenzar-recoleccion" element={<StartRecoleccion />} />
         <Route path="/visitar-punto" element={<VisitarPunto />} />
         <Route path="/esperar-cobro" element={<EsperarCobro />} />
         <Route path="/entregar-paquetes" element={<EntregarPaquete />} />
@@ -36,7 +37,8 @@ const AppRoutes: React.FC = () => {
       </Route>
       <Route element={<ProtectedRouteRedGlobal />}>
         <Route path="/home-red-global" element={<HomeRedGlobal />} />
-        <Route path="/necesidades" element={<Necesidades/>} />
+        <Route path="/necesidades" element={<Necesidades />} />
+        <Route path="/ordenes-distribucion" element={<OrdenesDistribucion />} />
       </Route>
     </Routes>
   );

@@ -8,6 +8,12 @@ interface Necesidad {
   estado: string;
 }
 
+interface OrdenDistribucion {
+  id: number;
+  necesidad_id: number;
+  estado: string;
+}
+
 // URLs base desde las variables de entorno
 const API_URL = import.meta.env.VITE_API_BASE_URL; // URL para la API Cloud
 const BACKEND_URL = import.meta.env.VITE_BACKEND_BASE_URL; // URL para el backend local
@@ -17,11 +23,12 @@ const getAuthToken = (): string | null => {
   return localStorage.getItem('redGlobalToken');
 };
 
-// Función para realizar la llamada a la API de login
-export const login = async (username: string, password: string): Promise<any> => {
+/// Servicio de login
+export const login = async (
+  username: string,
+  password: string
+): Promise<{ access_token: string; rol: string }> => {
   try {
-    console.log('Entrada de login:', username, password);
-
     const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: {
@@ -34,9 +41,16 @@ export const login = async (username: string, password: string): Promise<any> =>
       throw new Error('Error al autenticar usuario');
     }
 
-    return await response.json();
+    const data = await response.json();
+
+    // Validar que la respuesta contiene los campos necesarios
+    if (!data.access_token || !data.rol) {
+      throw new Error('La respuesta del servidor no contiene el token o el rol.');
+    }
+
+    return data; // Devolvemos el token y el rol
   } catch (error) {
-    console.error('Error en la llamada a login:', error);
+    console.error('Error en el servicio de login:', error);
     throw error;
   }
 };
@@ -201,6 +215,76 @@ console.log('Entrada de reduceMaterialStock:', codMaterial, cantidad);
     console.log(`Stock del material ${codMaterial} reducido en ${cantidad}.`);
   } catch (error) {
     console.error(`Error al reducir el stock del material ${codMaterial}:`, error);
+    throw error;
+  }
+};
+
+// Función para obtener las órdenes de distribución desde la API
+export const getOrdenesDistribucion = async (): Promise<OrdenDistribucion[]> => {
+  const token = localStorage.getItem('redGlobalToken'); // Obtener el token del almacenamiento local
+  if (!token) {
+    throw new Error('Token no encontrado. Por favor inicia sesión.');
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/api/ordenes-distribucion`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // Incluye el token en el encabezado
+      },
+    });
+
+    if (!response.ok) {
+      const error = await response.text(); // Capturar el error en texto
+      throw new Error(`Error al obtener las órdenes de distribución: ${error}`);
+    }
+
+    // Parsear y devolver las órdenes
+    const data: OrdenDistribucion[] = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error en la llamada a getOrdenesDistribucion:', error);
+    throw error;
+  }
+};
+
+export const tomarOrdenDistribucion = async (ordenId: number): Promise<void> => {
+  const token = localStorage.getItem('redGlobalToken');
+  console.log('Tomando orden de distribución:', ordenId);
+  const response = await fetch(`${API_URL}/api/ordenes_distribucion/tomar/${ordenId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.msg || 'Error al tomar la orden de distribución');
+  }
+};
+
+export const confirmarEntregaOrdenDistribucion = async (ordenId: number): Promise<void> => {
+  const token = localStorage.getItem('redGlobalToken');
+  try {
+    const response = await fetch(`${API_URL}/api/ordenes_distribucion/confirmar/${ordenId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.msg || 'Error al confirmar la entrega');
+    }
+
+    console.log(`Orden ${ordenId} confirmada como distribuida.`);
+  } catch (error) {
+    console.error(`Error al confirmar la entrega de la orden ${ordenId}:`, error);
     throw error;
   }
 };
