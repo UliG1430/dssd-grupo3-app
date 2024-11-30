@@ -6,7 +6,7 @@ namespace Backend.Repositories
 {
     public class GenericRepository<TEntity> : IDataRepository<TEntity> where TEntity : class
     {
-        private readonly ApiDbContext _context;
+        protected readonly ApiDbContext _context;
         public GenericRepository(ApiDbContext context)
         {
             _context = context;

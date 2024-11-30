@@ -17,9 +17,10 @@ public class MaterialController : ControllerBase
         _materialRepository = materialRepository;
     }
 
+    // Endpoint para obtener todos los materiales
     [HttpGet("materiales")]
     //[Authorize]
-    public async Task<IActionResult> getMateriales()
+    public async Task<IActionResult> GetMateriales()
     {
         try
         {
@@ -32,4 +33,36 @@ public class MaterialController : ControllerBase
             return BadRequest(e.Message);
         }
     }
+
+    // Endpoint para obtener el stock de un material por su código
+  [HttpGet("{codMaterial}/stock")]
+  public async Task<IActionResult> GetStock(string codMaterial)
+  {
+      try
+      {
+          var stock = await _materialRepository.GetStockByCodeAsync(codMaterial);
+
+          if (stock == null)
+          {
+              return NotFound(new
+              {
+                  Message = $"El material con código {codMaterial} no fue encontrado."
+              });
+          }
+
+          return Ok(new
+          {
+              CodMaterial = codMaterial,
+              StockActual = stock // Retorna el stock como double
+          });
+      }
+      catch (Exception e)
+      {
+          return StatusCode(500, new
+          {
+              Message = "Ocurrió un error al obtener el stock del material.",
+              Error = e.Message
+          });
+      }
+  }
 }
