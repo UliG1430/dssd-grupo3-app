@@ -61,6 +61,27 @@ namespace api.Controllers
                 return BadRequest(e.Message);
             }
         }
+        
+        [HttpPost("ProveedoresMaxPedidosCompletados")]
+        public async Task<IActionResult> GetProveedoresMaxPedidosCompletados([FromBody] MetricaInicioFinCantidad body)
+        {
+            try
+            {
+                List<RecolectoresMaxOrdenesReturn> maxOrdenesRepositores = await _ordenRepository.GetProveedoresMaxPedidosCompletados(body.FechaInicio, body.FechaFin, body.Cantidad);
+
+                var result = new List<object>();
+                maxOrdenesRepositores.ForEach(m => result.Add(new 
+                {
+                    PuntoRecoleccion = _puntoRecoleccionRepository.GetAsync(m.PuntoRecoleccionId).Result,
+                    CantidadPedidos = m.CantidadPedidos
+                }));
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
     // DTOs
     public class MetricaInicioFinCantidad

@@ -38,10 +38,10 @@ namespace Backend.Repositories
             await _dbContext.SaveChangesAsync();
         }
 
-        public List<MaxOrdenesRepositoresReturn> GetMaxOrdenesRecolectores(DateTime fechaInicio, DateTime fechaFin, int cant)
+        public async Task<List<MaxOrdenesRepositoresReturn>> GetMaxOrdenesRecolectores(DateTime fechaInicio, DateTime fechaFin, int cant)
         {
-            List<MaxOrdenesRepositoresReturn> result = _dbContext.Ordenes
-                .Where(o => o.Fecha >= fechaInicio && o.Fecha <= fechaFin)
+            List<MaxOrdenesRepositoresReturn> result = await _dbContext.Ordenes
+                .Where(o => o.Fecha >= fechaInicio && o.Fecha <= fechaFin && o.estado == "OK")
                 .GroupBy(o => o.UsuarioId)
                 .Select(g => new MaxOrdenesRepositoresReturn
                 {
@@ -49,11 +49,30 @@ namespace Backend.Repositories
                     CantidadOrdenes = g.Count()
                 })
                 .OrderByDescending(g => g.CantidadOrdenes)
-                .ToList();
+                .ToListAsync();
 
-                result = result.Take(cant).ToList();
+            result = result.Take(cant).ToList();
 
             return result;
+        }
+        
+        public async Task<List<RecolectoresMaxOrdenesReturn>> GetProveedoresMaxPedidosCompletados(DateTime fechaInicio, DateTime fechaFin, int cant)
+        {
+            List<RecolectoresMaxOrdenesReturn> result = await _dbContext.Ordenes
+                .Where(o => o.Fecha >= fechaInicio && o.Fecha <= fechaFin)// && o.estado == "OK"
+                .GroupBy(o => o.PuntoRecoleccionId)
+                .Select(g => new RecolectoresMaxOrdenesReturn
+                {
+                    PuntoRecoleccionId = g.Key,
+                    CantidadPedidos = g.Count()
+                })
+                .OrderByDescending(g => g.CantidadPedidos)
+                .ToListAsync();
+
+            result = result.Take(cant).ToList();
+            
+            return result;
+
         }
     }
 
@@ -62,5 +81,11 @@ namespace Backend.Repositories
     {
         public int RecolectorId { get; set; }
         public int CantidadOrdenes { get; set; }
+    }
+
+    public class RecolectoresMaxOrdenesReturn
+    {
+        public int PuntoRecoleccionId { get; set; }
+        public int CantidadPedidos { get; set; }
     }
 }
