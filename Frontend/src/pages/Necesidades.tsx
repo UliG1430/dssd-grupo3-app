@@ -1,34 +1,36 @@
 import React, { useEffect, useState } from 'react';
-import { getNecesidades, getStockMaterial } from '../service/apiService';
+import { getNecesidades, getStockMaterial, checkDepositoProveedor, addDepositoProveedor } from '../service/apiService';
 
 interface Necesidad {
-  deposit: string;
+  id: number;
   material: string;
-  CodMaterial: string; // Asegúrate de que la necesidad tenga CodMaterial
+  cod_material: string;
   quantity: number;
+  deposito_id: number;
+  material_id: number;
+  estado: string;
 }
 
 const Necesidades: React.FC = () => {
-  const [necesidades, setNecesidades] = useState<Necesidad[]>([]); // Inicializado como array vacío
+  const [necesidades, setNecesidades] = useState<Necesidad[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalData, setModalData] = useState<{
     necesidad: Necesidad | null;
     stockActual: number | null;
-  }>({ necesidad: null, stockActual: null });
+    combinationExists: boolean | null;
+  }>({ necesidad: null, stockActual: null, combinationExists: null });
+  const [providerModalData, setProviderModalData] = useState<{
+    necesidad: Necesidad | null;
+  }>({ necesidad: null });
+  const [registeringProvider, setRegisteringProvider] = useState(false);
 
   useEffect(() => {
     const fetchNecesidades = async () => {
       try {
         const response = await getNecesidades();
-        console.log('Respuesta de la API:', response);
-
-        if (Array.isArray(response)) {
-          setNecesidades(response); // Usar directamente el arreglo
-        } else {
-          console.error('Formato de datos no válido:', response);
-          throw new Error('La respuesta no tiene el formato esperado.');
-        }
+        console.log('Respuesta de getNecesidades:', response);
+        setNecesidades(response);
         setLoading(false);
       } catch (err) {
         console.error('Error al cargar las necesidades:', err);
@@ -42,28 +44,61 @@ const Necesidades: React.FC = () => {
 
   const handleVerificarExistencias = async (necesidad: Necesidad) => {
     try {
-      const stockResponse = await getStockMaterial(necesidad.CodMaterial);
+      console.log('Necesidad seleccionada:', necesidad); // Depuración
+      const stockResponse = await getStockMaterial(necesidad.cod_material);
       setModalData({
         necesidad,
-        stockActual: stockResponse.StockActual,
+        stockActual: stockResponse,
+        combinationExists: null,
       });
     } catch (error) {
       console.error('Error al verificar existencias:', error);
       setModalData({
         necesidad,
         stockActual: null,
+        combinationExists: null,
       });
     }
   };
 
-  const handleCerrarModal = () => {
-    setModalData({ necesidad: null, stockActual: null });
+  const handleTomarPedido = async (necesidad: Necesidad) => {
+    try {
+      const combinationExists = await checkDepositoProveedor(necesidad.material_id, necesidad.deposito_id);
+  
+      if (!combinationExists) {
+        setProviderModalData({ necesidad });
+        setModalData({ necesidad: null, stockActual: null, combinationExists: null });
+      } else {
+        console.log(`Pedido tomado para el depósito: ${necesidad.deposito_id}, material: ${necesidad.material}`);
+        setModalData({ necesidad: null, stockActual: null, combinationExists: true });
+      }
+    } catch (error) {
+      console.error('Error al verificar combinación:', error);
+    }
   };
 
-  const handleTomarPedido = (necesidad: Necesidad) => {
-    console.log(`Pedido tomado para el depósito: ${necesidad.deposit}, material: ${necesidad.material}`);
-    // Implementar lógica adicional aquí
-    handleCerrarModal(); // Cierra el modal después de tomar el pedido
+  const handleCerrarModal = () => {
+    setModalData({ necesidad: null, stockActual: null, combinationExists: null });
+  };
+
+  const handleCerrarProviderModal = () => {
+    setProviderModalData({ necesidad: null });
+  };
+
+  const handleRegistrarProveedor = async (necesidad: Necesidad) => {
+    try {
+      setRegisteringProvider(true);
+      console.log('Iniciando registro de proveedor para necesidad:', necesidad);
+
+      await addDepositoProveedor(necesidad.deposito_id, necesidad.material_id, necesidad.cod_material);
+
+      alert(`El proveedor para el depósito "${necesidad.deposito_id}" y material "${necesidad.material}" ha sido registrado exitosamente.`);
+      handleCerrarProviderModal();
+    } catch (error) {
+      console.error('Error al registrar el proveedor:', error);
+    } finally {
+      setRegisteringProvider(false);
+    }
   };
 
   if (loading) return <p className="text-center">Cargando necesidades...</p>;
@@ -75,19 +110,19 @@ const Necesidades: React.FC = () => {
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
           Necesidades de los Depósitos
         </h1>
-        {Array.isArray(necesidades) && necesidades.length > 0 ? (
+        {necesidades.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {necesidades.map((necesidad, index) => (
+            {necesidades.map((necesidad) => (
               <div
-                key={index}
+                key={necesidad.id}
                 className="bg-white p-4 rounded-md shadow-md border border-gray-200"
               >
-                <h2 className="text-xl font-semibold text-gray-700">{necesidad.deposit}</h2>
+                <h2 className="text-xl font-semibold text-gray-700">Depósito {necesidad.deposito_id}</h2>
                 <p className="mt-2 text-gray-600">Material: {necesidad.material}</p>
                 <p className="mt-2 text-gray-600">Cantidad necesitada: {necesidad.quantity}kg</p>
                 <button
                   className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
-                  onClick={() => handleVerificarExistencias(necesidad)} // Verificar existencias
+                  onClick={() => handleVerificarExistencias(necesidad)}
                 >
                   Verificar Existencias
                 </button>
@@ -99,12 +134,12 @@ const Necesidades: React.FC = () => {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal de Detalle */}
       {modalData.necesidad && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-md shadow-lg w-96">
             <h2 className="text-2xl font-bold mb-4">Detalle de la Necesidad</h2>
-            <p><strong>Depósito:</strong> {modalData.necesidad.deposit}</p>
+            <p><strong>Depósito:</strong> {modalData.necesidad.deposito_id}</p>
             <p><strong>Material:</strong> {modalData.necesidad.material}</p>
             <p><strong>Stock Actual:</strong> {modalData.stockActual !== null ? `${modalData.stockActual}kg` : 'Error al obtener el stock'}</p>
             <p><strong>Cantidad Necesitada:</strong> {modalData.necesidad.quantity}kg</p>
@@ -115,17 +150,47 @@ const Necesidades: React.FC = () => {
                 onClick={handleCerrarModal}
               >
                 Cerrar
-                    </button>
-                    {modalData.stockActual !== null &&
-        modalData.necesidad !== null &&
-        modalData.stockActual >= modalData.necesidad.quantity && (
-            <button
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-            onClick={() => handleTomarPedido(modalData.necesidad!)}
-            >
-            Tomar Pedido
-            </button>
-        )}
+              </button>
+
+              {modalData.stockActual !== null &&
+                modalData.stockActual >= modalData.necesidad.quantity && (
+                  <button
+                    className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
+                    onClick={() => handleTomarPedido(modalData.necesidad!)}
+                  >
+                    Tomar Pedido
+                  </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Registrar Proveedor */}
+      {providerModalData.necesidad && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-md shadow-lg w-96">
+            <h2 className="text-2xl font-bold mb-4">Registrar Proveedor</h2>
+            <p><strong>Depósito:</strong> {providerModalData.necesidad.deposito_id}</p>
+            <p><strong>Material:</strong> {providerModalData.necesidad.material}</p>
+            <p className="text-red-500 mt-2">
+              Depósito {providerModalData.necesidad.deposito_id} no se encuentra registrado como proveedor del material {providerModalData.necesidad.material}.
+            </p>
+
+            <div className="mt-4 flex justify-end space-x-4">
+              <button
+                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                onClick={handleCerrarProviderModal}
+              >
+                Cerrar
+              </button>
+              <button
+                className={`bg-yellow-500 text-white px-4 py-2 rounded-md hover:bg-yellow-600 ${registeringProvider ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => handleRegistrarProveedor(providerModalData.necesidad!)}
+                disabled={registeringProvider}
+              >
+                {registeringProvider ? 'Registrando...' : 'Registrar Proveedor'}
+              </button>
             </div>
           </div>
         </div>
