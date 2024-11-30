@@ -9,6 +9,7 @@ import {
 } from '../service/apiService';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { executeTask, setCaseVariable } from '../service/bonitaService';
 
 interface Necesidad {
   id: number;
@@ -38,6 +39,20 @@ const Necesidades: React.FC = () => {
     const fetchNecesidades = async () => {
       try {
         const response = await getNecesidades();
+        const caseId=localStorage.getItem('caseId');
+        if (caseId){
+        if (response.length === 0) {
+          await setCaseVariable(caseId,"hay_necesidades", false);
+
+        }
+        else
+        {
+          await setCaseVariable(caseId,"hay_necesidades", true);
+        }
+         await executeTask(localStorage.getItem('nextTaskId')!); 
+      }
+
+
         console.log('Respuesta de getNecesidades:', response);
         setNecesidades(response);
         setLoading(false);

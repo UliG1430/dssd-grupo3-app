@@ -97,5 +97,25 @@ public class OrdenController : ControllerBase
         }
     }
 
+    [HttpGet("GetOrdenesForUsuario/{idUsuario}")]
+    public async Task<IActionResult> GetOrdenesForUsuarioInLastTwoWeeks(int idUsuario)
+    {
+        try
+        {
+            var ordenes = await _ordenRepository.GetOrdenesForUsuarioInLastTwoWeeksAsync(idUsuario);
+
+            if (ordenes == null || !ordenes.Any())
+            {
+                return Ok(new List<Orden>());
+            }
+
+            return Ok(ordenes);
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { message = "Error retrieving ordenes.", error = e.Message });
+        }
+    }
+
 
 }
