@@ -34,35 +34,64 @@ public class MaterialController : ControllerBase
         }
     }
 
-    // Endpoint para obtener el stock de un material por su código
-  [HttpGet("{codMaterial}/stock")]
-  public async Task<IActionResult> GetStock(string codMaterial)
-  {
-      try
-      {
-          var stock = await _materialRepository.GetStockByCodeAsync(codMaterial);
+    [HttpPut("Stock/Add/{id}")]
+    public async Task<IActionResult> AddToStockMaterial(int id, [FromBody] UpdateMaterialStockDto body)
+    {
+         try
+         {
+             // Retrieve the material
+             var material = await _materialRepository.GetByIdAsync(id);
+             if (material == null)
+             {
+                 return NotFound(new { message = $"Material with Id {id} not found." });
+             }
 
-          if (stock == null)
-          {
-              return NotFound(new
-              {
-                  Message = $"El material con código {codMaterial} no fue encontrado."
-              });
-          }
+             // Add to the current stock
+             material.StockActual += body.Cantidad;
 
-          return Ok(new
-          {
-              CodMaterial = codMaterial,
-              StockActual = stock // Retorna el stock como double
-          });
-      }
-      catch (Exception e)
-      {
-          return StatusCode(500, new
-          {
-              Message = "Ocurrió un error al obtener el stock del material.",
-              Error = e.Message
-          });
-      }
-  }
+             // Save changes
+             _materialRepository.Update(material);
+             await _materialRepository.SaveChangesAsync();
+
+             return Ok(new { message = "Material stock increased successfully", material });
+         }
+         catch (Exception e)
+         {
+             return BadRequest(new { message = "Error increasing material stock.", error = e.Message });
+         }
+    }
+
+    [HttpPut("Stock/Reduce/{id}")]
+    public async Task<IActionResult> ReduceStockMaterial(int id, [FromBody] UpdateMaterialStockDto body)
+    {
+     try
+     {
+         // Retrieve the material
+         var material = await _materialRepository.GetByIdAsync(id);
+         if (material == null)
+         {
+             return NotFound(new { message = $"Material with Id {id} not found." });
+         }
+
+         // Ensure stock does not go negative
+         if (material.StockActual < body.Cantidad)
+         {
+             return BadRequest(new { message = "Not enough stock to complete the reduction." });
+         }
+
+         // Reduce the current stock
+         material.StockActual -= body.Cantidad;
+
+         // Save changes
+         _materialRepository.Update(material);
+         await _materialRepository.SaveChangesAsync();
+
+         return Ok(new { message = "Material stock reduced successfully", material });
+     }
+     catch (Exception e)
+     {
+         return BadRequest(new { message = "Error reducing material stock.", error = e.Message });
+     }
+    }
+
 }
