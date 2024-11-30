@@ -13,6 +13,7 @@ namespace Backend.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Paquete> Paquetes { get; set; }
         public DbSet<UltimaEvaluacion> UltimasEvaluaciones { get; set; }
+        public DbSet<Evaluacion> Evaluacion { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
