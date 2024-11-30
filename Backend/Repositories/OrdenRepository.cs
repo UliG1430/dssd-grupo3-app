@@ -37,5 +37,30 @@ namespace Backend.Repositories
         {
             await _dbContext.SaveChangesAsync();
         }
+
+        public List<MaxOrdenesRepositoresReturn> GetMaxOrdenesRecolectores(DateTime fechaInicio, DateTime fechaFin, int cant)
+        {
+            List<MaxOrdenesRepositoresReturn> result = _dbContext.Ordenes
+                .Where(o => o.Fecha >= fechaInicio && o.Fecha <= fechaFin)
+                .GroupBy(o => o.UsuarioId)
+                .Select(g => new MaxOrdenesRepositoresReturn
+                {
+                    RecolectorId = g.Key,
+                    CantidadOrdenes = g.Count()
+                })
+                .OrderByDescending(g => g.CantidadOrdenes)
+                .ToList();
+
+                result = result.Take(cant).ToList();
+
+            return result;
+        }
+    }
+
+    //DTO
+    public class MaxOrdenesRepositoresReturn
+    {
+        public int RecolectorId { get; set; }
+        public int CantidadOrdenes { get; set; }
     }
 }
