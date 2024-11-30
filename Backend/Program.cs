@@ -21,7 +21,6 @@ builder.Services.AddScoped<MaterialRepository>();
 builder.Services.AddScoped<PaqueteRepository>();
 builder.Services.AddScoped<UltimaEvaluacionRepository>();
 builder.Services.AddScoped<NotificacionPagoRepository>();
-builder.Services.AddScoped<EvaluacionRepository>();
 
 //Servicio Bonita
 builder.Services.AddHttpClient<BonitaService>();

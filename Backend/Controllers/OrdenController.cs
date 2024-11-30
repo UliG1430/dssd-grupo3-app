@@ -33,7 +33,8 @@ public class OrdenController : ControllerBase
                 UsuarioId = body.UsuarioId,
                 paqueteId = body.PaqueteId,
                 revisado = body.Revisado,
-                estado = body.Estado
+                estado = body.Estado,
+                FechaCambioEstado = DateTime.UtcNow
             };
 
             await _ordenRepository.AddAsync(orden);
@@ -82,6 +83,7 @@ public class OrdenController : ControllerBase
 
             // Update the State field
             orden.estado = body.Estado;
+            orden.FechaCambioEstado = DateTime.UtcNow;
 
             // Save changes
             _ordenRepository.Update(orden);

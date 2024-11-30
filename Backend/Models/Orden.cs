@@ -12,6 +12,7 @@ public class Orden
     public required int paqueteId { get; set; }
     public required bool revisado { get; set; }
     public required string estado { get; set; }
+    public required DateTime FechaCambioEstado { get; set; }
 
     public PuntoRecoleccion PuntoRecoleccion { get; set; } // Navigation property
     //public string Usuario { get; set; }

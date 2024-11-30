@@ -13,32 +13,29 @@ namespace api.Controllers
     {
         private readonly UsuarioRepository _usuarioRepository;
         private readonly OrdenRepository _ordenRepository;
-        private readonly EvaluacionRepository _evaluacionRepository;
         private readonly PuntoRecoleccionRepository _puntoRecoleccionRepository;
 
         public MetricaController(UsuarioRepository usuarioRepository, 
                                  OrdenRepository ordenRepository,
-                                 EvaluacionRepository evaluacionRepository,
                                  PuntoRecoleccionRepository puntoRecoleccionRepository)
         {
             _usuarioRepository = usuarioRepository;
             _ordenRepository = ordenRepository;
-            _evaluacionRepository = evaluacionRepository;
             _puntoRecoleccionRepository = puntoRecoleccionRepository;
         }
 
-        [HttpPost("RecolectoresMaxOrdenes")]
-        public async Task<IActionResult> GetRecolectoresMaxOrdenes([FromBody] MetricaInicioFinCantidad body)
+        [HttpPost("GetRecolectoresMasCargan")]
+        public async Task<IActionResult> GetRecolectoresMasCargan([FromBody] MetricaInicioFinCantidad body)
         {
             try
             {
-                List<MaxOrdenesRepositoresReturn> maxOrdenesRepositores = await _ordenRepository.GetMaxOrdenesRecolectores(body.FechaInicio, body.FechaFin, body.Cantidad);
+                List<RecolectoresMasCargan> recolectoresMasCargan = await _ordenRepository.GetRecolectoresMasCargan(body.FechaInicio, body.FechaFin, body.Cantidad);
 
                 var result = new List<object>();
-                maxOrdenesRepositores.ForEach(m => result.Add(new 
+                recolectoresMasCargan.ForEach(m => result.Add(new 
                 {
-                    Recolector = _usuarioRepository.GetByIdAsync(m.RecolectorId).Result,
-                    CantidadOrdenes = m.CantidadOrdenes
+                    Recolector = _usuarioRepository.GetByIdAsync(m.RecolectorId).Result.UsuarioNombre,
+                    CantidadOrdenesBienCargadas = m.CantidadOrdenes
                 }));
                 return Ok(result);
             }
@@ -48,12 +45,22 @@ namespace api.Controllers
             }
         }
         
-        [HttpGet("PromedioDiscrepancias")]
+        [HttpGet("GetPromedioDiscrepancias")]
         public async Task<IActionResult> GetPromedioDiscrepancias()
         {
             try
             {
-                var result = await _evaluacionRepository.GetPromedioDiscrepancias();
+                List<ProporcionDiscrepancias> proporcionDiscrepancias = await _ordenRepository.GetProporcionDiscrepancias();
+
+                var result = new List<object>();
+                proporcionDiscrepancias.ForEach(p => result.Add(new 
+                {
+                    Usuario = _usuarioRepository.GetAsync(p.UsuarioId).Result.UsuarioNombre,
+                    CantidadOrdenes = p.CantidadOrdenes,
+                    CantidadDiscrepancias = p.CantidadDiscrepancias,
+                    Proporcion = p.Proporcion
+                }));
+
                 return Ok(result);
             }
             catch (Exception e)
@@ -62,19 +69,35 @@ namespace api.Controllers
             }
         }
         
-        [HttpPost("ProveedoresMaxPedidosCompletados")]
-        public async Task<IActionResult> GetProveedoresMaxPedidosCompletados([FromBody] MetricaInicioFinCantidad body)
+        [HttpPost("GetProveedoresMasEficientes")]
+        public async Task<IActionResult> GetProveedoresMasEficientes([FromBody] MetricaInicioFinCantidad body)
         {
             try
             {
-                List<RecolectoresMaxOrdenesReturn> maxOrdenesRepositores = await _ordenRepository.GetProveedoresMaxPedidosCompletados(body.FechaInicio, body.FechaFin, body.Cantidad);
+                List<ProveedoresMasEficientesResult> proveedoresMasEficientes = await _ordenRepository.GetProveedoresMasEficientes(body.FechaInicio, body.FechaFin, body.Cantidad);
 
                 var result = new List<object>();
-                maxOrdenesRepositores.ForEach(m => result.Add(new 
+                proveedoresMasEficientes.ForEach(m => result.Add(new 
                 {
-                    PuntoRecoleccion = _puntoRecoleccionRepository.GetAsync(m.PuntoRecoleccionId).Result,
-                    CantidadPedidos = m.CantidadPedidos
+                    Proveedor = _puntoRecoleccionRepository.GetAsync(m.PuntoRecoleccionId).Result,
+                    TiempoPromedioDeVerificacion = m.TiempoPromedio.ToString("0.00") + " minutos",
+                    ProporcionOrdenesVerificadas = m.ProporcionVerificadas
                 }));
+
+                return Ok(result);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
+
+        [HttpGet("GetTiempoPromedioDeProcesamientoPorMaterial")]
+        public async Task<IActionResult> GetTiempoPromedioDeProcesamientoPorMaterial()
+        {
+            try
+            {
+                var result = await _ordenRepository.GetTiempoPromedioDeProcesamientoPorMaterial();
                 return Ok(result);
             }
             catch (Exception e)
