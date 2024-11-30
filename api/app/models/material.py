@@ -5,6 +5,4 @@ class Material(db.Model):
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
-
-    def __repr__(self):
-        return f"<Material {self.name}>"
+    cod_material = db.Column(db.String(3), nullable=True)  # Nueva columna

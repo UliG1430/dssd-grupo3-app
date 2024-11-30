@@ -1,9 +1,12 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from app.models.orden_distribucion import OrdenDistribucion
 from app.models.order import Orden
 from app.models.material import Material
 from app.models.deposito import Deposito
 from app.models.deposito_proveedor import DepositoProveedor 
+from app.models.necesidad import Necesidad
+
 from app import db
 
 protected_bp = Blueprint('protected_bp', __name__)
@@ -94,6 +97,7 @@ def add_deposito_proveedor():
     # Get the deposito_id and material_id from the request body
     deposito_id = request.json.get('deposito_id', None)
     material_id = request.json.get('material_id', None)
+    codigo_material = request.json.get('codigo_material', None)
 
     # Validate that deposito_id and material_id are provided
     if deposito_id is None or material_id is None:
@@ -115,7 +119,7 @@ def add_deposito_proveedor():
         return jsonify({"msg": "The deposito is already registered as a provider for this material"}), 409
 
     # If not, create a new deposito_proveedor entry
-    new_deposito_proveedor = DepositoProveedor(deposito_id=deposito_id, material_id=material_id)
+    new_deposito_proveedor = DepositoProveedor(deposito_id=deposito_id, material_id=material_id, cod_material=codigo_material)
     
     # Add the new entry to the database
     try:
@@ -127,10 +131,104 @@ def add_deposito_proveedor():
         return jsonify({"msg": "Error adding deposito_proveedor", "error": str(e)}), 500
     
 @protected_bp.route('/necesidades', methods=['GET'])
+@jwt_required()  # Protected with JWT
 def get_needs():
+    # Consultar todas las necesidades desde la base de datos
+    necesidades = Necesidad.query.all()
     needs = [
-        {"material": "Material A", "quantity": 10, "deposit": "Deposit 1"},
-        {"material": "Material B", "quantity": 20, "deposit": "Deposit 2"},
-        {"material": "Material C", "quantity": 30, "deposit": "Deposit 3"}
+        {
+            "material": necesidad.material,
+            "CodMaterial": necesidad.cod_material,
+            "quantity": necesidad.quantity,
+            "deposit": necesidad.deposito.name,  # Obtener el nombre del depósito
+            "deposito_id": necesidad.deposito_id,
+            "material_id": necesidad.material_id,
+            "id": necesidad.id,
+            "estado": necesidad.estado
+
+        }
+        for necesidad in necesidades
     ]
     return jsonify(needs), 200
+
+@protected_bp.route('/check_combination', methods=['GET'])
+@jwt_required()  # Protect with JWT
+def check_combination():
+    try:
+        # Obtener los parámetros de consulta: material_id y deposito_id
+        material_id = request.args.get('material_id', type=int)
+        deposito_id = request.args.get('deposito_id', type=int)
+
+        # Validar que ambos parámetros estén presentes
+        if not material_id or not deposito_id:
+            return jsonify({"msg": "Parámetros faltantes: 'material_id' y 'deposito_id' son requeridos"}), 400
+
+        # Verificar si existe la combinación en la tabla `deposito_proveedor`
+        exists = DepositoProveedor.query.filter_by(deposito_id=deposito_id, material_id=material_id).first() is not None
+
+        # Respuesta con el resultado
+        return jsonify({"exists": exists}), 200
+    except Exception as e:
+        return jsonify({"msg": "Error interno", "error": str(e)}), 500
+    
+
+@protected_bp.route('/deposito', methods=['GET'])
+@jwt_required()
+def get_deposito_by_name():
+    deposito_name = request.args.get('name')
+    if not deposito_name:
+        return jsonify({"msg": "El nombre del depósito es requerido"}), 400
+
+    deposito = Deposito.query.filter_by(name=deposito_name).first()
+    if not deposito:
+        return jsonify({"msg": "Depósito no encontrado"}), 404
+
+    return jsonify({"id": deposito.id}), 200
+
+
+@protected_bp.route('/material', methods=['GET'])
+@jwt_required()
+def get_material_by_code():
+    material_code = request.args.get('code')
+    if not material_code:
+        return jsonify({"msg": "El código del material es requerido"}), 400
+
+    material = Material.query.filter_by(cod_material=material_code).first()
+    if not material:
+        return jsonify({"msg": "Material no encontrado"}), 404
+
+    return jsonify({"id": material.id}), 200
+
+@protected_bp.route('/necesidades/tomar/<int:necesidad_id>', methods=['POST'])
+@jwt_required()
+def tomar_necesidad(necesidad_id):
+    try:
+        # Buscar la necesidad por ID
+        necesidad = Necesidad.query.get(necesidad_id)
+        if not necesidad:
+            return jsonify({"msg": "Necesidad no encontrada"}), 404
+
+        # Verificar si la necesidad ya está tomada
+        if necesidad.estado == 'tomada':
+            return jsonify({"msg": "La necesidad ya fue tomada"}), 409
+
+        # Cambiar el estado de la necesidad a "tomada"
+        necesidad.estado = 'tomada'
+
+        # Crear una nueva orden de distribución
+        nueva_orden = OrdenDistribucion(
+            necesidad_id=necesidad.id,
+            estado='pendiente'  # Estado inicial de la orden
+        )
+        db.session.add(nueva_orden)
+        db.session.commit()
+
+        return jsonify({
+            "msg": "Necesidad tomada y orden de distribución creada",
+            "necesidad_id": necesidad.id,
+            "orden_id": nueva_orden.id
+        }), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al tomar la necesidad", "error": str(e)}), 500

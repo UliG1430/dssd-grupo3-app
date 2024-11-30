@@ -20,8 +20,7 @@ def create_app():
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'dssd-grupo3')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  # Token expires in 1 hour
 
-    # Habilitar CORS para permitir solicitudes desde tu frontend
-    CORS(app, origins="http://localhost:5173")  # Cambia por la URL de tu frontend
+    CORS(app)
 
     # Inicializamos las extensiones
     db.init_app(app)
@@ -31,19 +30,20 @@ def create_app():
     # Inicializar Flasgger (Swagger UI)
     Swagger(app)
 
-    @jwt.expired_token_loader
-    def expired_token_callback(jwt_header, jwt_payload):
-        return jsonify({"msg": "The token has expired"}), 401
-
-    @jwt.invalid_token_loader
-    def invalid_token_callback(error):
-        return jsonify({"msg": "Invalid token"}), 401
-
     # Registrar los Blueprints
     from app.auth.routes import auth_bp
     from app.routes.protected import protected_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(protected_bp, url_prefix='/api')
+
+    # Importar modelos al final para evitar circularidad
+    with app.app_context():
+        from app.models.deposito import Deposito
+        from app.models.deposito_proveedor import DepositoProveedor
+        from app.models.user import User  # Importa otros modelos según sea necesario
+        from app.models.material import Material
+        from app.models.order import Orden
+        
 
     return app
