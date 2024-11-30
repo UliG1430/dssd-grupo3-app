@@ -133,19 +133,18 @@ def add_deposito_proveedor():
 @protected_bp.route('/necesidades', methods=['GET'])
 @jwt_required()  # Protected with JWT
 def get_needs():
-    # Consultar todas las necesidades desde la base de datos
-    necesidades = Necesidad.query.all()
+    # Consultar todas las necesidades con estado "pendiente" desde la base de datos
+    necesidades = Necesidad.query.filter_by(estado="pendiente").all()
     needs = [
         {
             "material": necesidad.material,
             "CodMaterial": necesidad.cod_material,
             "quantity": necesidad.quantity,
-            "deposit": necesidad.deposito.name,  # Obtener el nombre del depósito
+            "deposit": necesidad.deposito.name,  
             "deposito_id": necesidad.deposito_id,
             "material_id": necesidad.material_id,
             "id": necesidad.id,
             "estado": necesidad.estado
-
         }
         for necesidad in necesidades
     ]
@@ -172,32 +171,32 @@ def check_combination():
         return jsonify({"msg": "Error interno", "error": str(e)}), 500
     
 
-@protected_bp.route('/deposito', methods=['GET'])
-@jwt_required()
-def get_deposito_by_name():
-    deposito_name = request.args.get('name')
-    if not deposito_name:
-        return jsonify({"msg": "El nombre del depósito es requerido"}), 400
+# @protected_bp.route('/deposito', methods=['GET'])
+# @jwt_required()
+# def get_deposito_by_name():
+#     deposito_name = request.args.get('name')
+#     if not deposito_name:
+#         return jsonify({"msg": "El nombre del depósito es requerido"}), 400
 
-    deposito = Deposito.query.filter_by(name=deposito_name).first()
-    if not deposito:
-        return jsonify({"msg": "Depósito no encontrado"}), 404
+#     deposito = Deposito.query.filter_by(name=deposito_name).first()
+#     if not deposito:
+#         return jsonify({"msg": "Depósito no encontrado"}), 404
 
-    return jsonify({"id": deposito.id}), 200
+#     return jsonify({"id": deposito.id}), 200
 
 
-@protected_bp.route('/material', methods=['GET'])
-@jwt_required()
-def get_material_by_code():
-    material_code = request.args.get('code')
-    if not material_code:
-        return jsonify({"msg": "El código del material es requerido"}), 400
+# @protected_bp.route('/material', methods=['GET'])
+# @jwt_required()
+# def get_material_by_code():
+#     material_code = request.args.get('code')
+#     if not material_code:
+#         return jsonify({"msg": "El código del material es requerido"}), 400
 
-    material = Material.query.filter_by(cod_material=material_code).first()
-    if not material:
-        return jsonify({"msg": "Material no encontrado"}), 404
+#     material = Material.query.filter_by(cod_material=material_code).first()
+#     if not material:
+#         return jsonify({"msg": "Material no encontrado"}), 404
 
-    return jsonify({"id": material.id}), 200
+#     return jsonify({"id": material.id}), 200
 
 @protected_bp.route('/necesidades/tomar/<int:necesidad_id>', methods=['POST'])
 @jwt_required()
