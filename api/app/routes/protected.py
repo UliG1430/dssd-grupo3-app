@@ -133,19 +133,18 @@ def add_deposito_proveedor():
 @protected_bp.route('/necesidades', methods=['GET'])
 @jwt_required()  # Protected with JWT
 def get_needs():
-    # Consultar todas las necesidades desde la base de datos
-    necesidades = Necesidad.query.all()
+    # Consultar todas las necesidades con estado "pendiente" desde la base de datos
+    necesidades = Necesidad.query.filter_by(estado="pendiente").all()
     needs = [
         {
             "material": necesidad.material,
             "CodMaterial": necesidad.cod_material,
             "quantity": necesidad.quantity,
-            "deposit": necesidad.deposito.name,  # Obtener el nombre del depósito
+            "deposit": necesidad.deposito.name,  
             "deposito_id": necesidad.deposito_id,
             "material_id": necesidad.material_id,
             "id": necesidad.id,
             "estado": necesidad.estado
-
         }
         for necesidad in necesidades
     ]
@@ -172,32 +171,32 @@ def check_combination():
         return jsonify({"msg": "Error interno", "error": str(e)}), 500
     
 
-@protected_bp.route('/deposito', methods=['GET'])
-@jwt_required()
-def get_deposito_by_name():
-    deposito_name = request.args.get('name')
-    if not deposito_name:
-        return jsonify({"msg": "El nombre del depósito es requerido"}), 400
+# @protected_bp.route('/deposito', methods=['GET'])
+# @jwt_required()
+# def get_deposito_by_name():
+#     deposito_name = request.args.get('name')
+#     if not deposito_name:
+#         return jsonify({"msg": "El nombre del depósito es requerido"}), 400
 
-    deposito = Deposito.query.filter_by(name=deposito_name).first()
-    if not deposito:
-        return jsonify({"msg": "Depósito no encontrado"}), 404
+#     deposito = Deposito.query.filter_by(name=deposito_name).first()
+#     if not deposito:
+#         return jsonify({"msg": "Depósito no encontrado"}), 404
 
-    return jsonify({"id": deposito.id}), 200
+#     return jsonify({"id": deposito.id}), 200
 
 
-@protected_bp.route('/material', methods=['GET'])
-@jwt_required()
-def get_material_by_code():
-    material_code = request.args.get('code')
-    if not material_code:
-        return jsonify({"msg": "El código del material es requerido"}), 400
+# @protected_bp.route('/material', methods=['GET'])
+# @jwt_required()
+# def get_material_by_code():
+#     material_code = request.args.get('code')
+#     if not material_code:
+#         return jsonify({"msg": "El código del material es requerido"}), 400
 
-    material = Material.query.filter_by(cod_material=material_code).first()
-    if not material:
-        return jsonify({"msg": "Material no encontrado"}), 404
+#     material = Material.query.filter_by(cod_material=material_code).first()
+#     if not material:
+#         return jsonify({"msg": "Material no encontrado"}), 404
 
-    return jsonify({"id": material.id}), 200
+#     return jsonify({"id": material.id}), 200
 
 @protected_bp.route('/necesidades/tomar/<int:necesidad_id>', methods=['POST'])
 @jwt_required()
@@ -232,3 +231,71 @@ def tomar_necesidad(necesidad_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"msg": "Error al tomar la necesidad", "error": str(e)}), 500
+
+@protected_bp.route('/ordenes-distribucion', methods=['GET'])
+@jwt_required()
+def get_ordenes_distribucion():
+    try:
+        # Consultar todas las órdenes de distribución desde la base de datos
+        ordenes = OrdenDistribucion.query.all()
+
+        # Serializar las órdenes para devolverlas en formato JSON
+        ordenes_list = [
+            {
+                "id": orden.id,
+                "necesidad_id": orden.necesidad_id,
+                "estado": orden.estado
+            }
+            for orden in ordenes
+        ]
+
+        # Responder con las órdenes en formato JSON
+        return jsonify(ordenes_list), 200
+    except Exception as e:
+        # Manejo de errores con rollback en caso de excepción
+        db.session.rollback()
+        return jsonify({"msg": "Error al obtener las órdenes de distribución", "error": str(e)}), 500
+    
+@protected_bp.route('/ordenes_distribucion/tomar/<int:orden_id>', methods=['PATCH'])
+@jwt_required()
+def tomar_orden_distribucion(orden_id):
+    try:
+        # Buscar la orden de distribución por ID
+        orden = OrdenDistribucion.query.get(orden_id)
+        if not orden:
+            return jsonify({"msg": "Orden de distribución no encontrada"}), 404
+
+        # Verificar si ya está en estado "en proceso"
+        if orden.estado == 'en proceso':
+            return jsonify({"msg": "La orden ya está en proceso"}), 409
+
+        # Cambiar el estado de la orden a "en proceso"
+        orden.estado = 'en proceso'
+        db.session.commit()
+
+        return jsonify({"msg": "Orden de distribución actualizada a 'en proceso'"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al actualizar la orden de distribución", "error": str(e)}), 500
+
+
+@protected_bp.route('/ordenes_distribucion/confirmar/<int:orden_id>', methods=['PATCH'])
+@jwt_required()
+def confirmar_entrega_orden_distribucion(orden_id):
+    """
+    Cambiar el estado de una orden de distribución a "entregada".
+    """
+    try:
+        orden = OrdenDistribucion.query.get(orden_id)
+        if not orden:
+            return jsonify({"msg": "Orden no encontrada"}), 404
+
+        if orden.estado != "en proceso":
+            return jsonify({"msg": f"La orden no puede ser confirmada porque está en estado {orden.estado}"}), 400
+
+        orden.estado = "distribuida"
+        db.session.commit()
+        return jsonify({"msg": "Orden confirmada como entregada", "orden_id": orden.id}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"msg": "Error al confirmar la entrega", "error": str(e)}), 500

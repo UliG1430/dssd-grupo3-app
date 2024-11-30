@@ -61,38 +61,38 @@ public class MaterialController : ControllerBase
          }
     }
 
-    [HttpPut("Stock/Reduce/{id}")]
-    public async Task<IActionResult> ReduceStockMaterial(int id, [FromBody] UpdateMaterialStockDto body)
-    {
-     try
-     {
-         // Retrieve the material
-         var material = await _materialRepository.GetByIdAsync(id);
-         if (material == null)
-         {
-             return NotFound(new { message = $"Material with Id {id} not found." });
-         }
+   [HttpPut("Stock/Reduce/{codMaterial}")]
+   public async Task<IActionResult> ReduceStockMaterial(string codMaterial, [FromBody] UpdateMaterialStockDto body)
+   {
+       try
+       {
+           // Retrieve the material by codMaterial
+           var material = await _materialRepository.GetByCodeAsync(codMaterial);
+           if (material == null)
+           {
+               return NotFound(new { message = $"Material with Code {codMaterial} not found." });
+           }
 
-         // Ensure stock does not go negative
-         if (material.StockActual < body.Cantidad)
-         {
-             return BadRequest(new { message = "Not enough stock to complete the reduction." });
-         }
+           // Ensure stock does not go negative
+           if (material.StockActual < body.Cantidad)
+           {
+               return BadRequest(new { message = "Not enough stock to complete the reduction." });
+           }
 
-         // Reduce the current stock
-         material.StockActual -= body.Cantidad;
+           // Reduce the current stock
+           material.StockActual -= body.Cantidad;
 
-         // Save changes
-         _materialRepository.Update(material);
-         await _materialRepository.SaveChangesAsync();
+           // Save changes
+           _materialRepository.Update(material);
+           await _materialRepository.SaveChangesAsync();
 
-         return Ok(new { message = "Material stock reduced successfully", material });
-     }
-     catch (Exception e)
-     {
-         return BadRequest(new { message = "Error reducing material stock.", error = e.Message });
-     }
-    }
+           return Ok(new { message = "Material stock reduced successfully", material });
+       }
+       catch (Exception e)
+       {
+           return BadRequest(new { message = "Error reducing material stock.", error = e.Message });
+       }
+   }
 
      [HttpGet("{codMaterial}/stock")]
       public async Task<IActionResult> GetStock(string codMaterial)
