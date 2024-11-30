@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { getNecesidades, getStockMaterial, checkDepositoProveedor, addDepositoProveedor } from '../service/apiService';
+import {
+  getNecesidades,
+  getStockMaterial,
+  checkDepositoProveedor,
+  addDepositoProveedor,
+  tomarNecesidad,
+  reduceMaterialStock,
+} from '../service/apiService';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface Necesidad {
   id: number;
@@ -44,7 +53,7 @@ const Necesidades: React.FC = () => {
 
   const handleVerificarExistencias = async (necesidad: Necesidad) => {
     try {
-      console.log('Necesidad seleccionada:', necesidad); // Depuración
+      console.log('Necesidad seleccionada:', necesidad);
       const stockResponse = await getStockMaterial(necesidad.cod_material);
       setModalData({
         necesidad,
@@ -64,16 +73,27 @@ const Necesidades: React.FC = () => {
   const handleTomarPedido = async (necesidad: Necesidad) => {
     try {
       const combinationExists = await checkDepositoProveedor(necesidad.material_id, necesidad.deposito_id);
-  
+
       if (!combinationExists) {
         setProviderModalData({ necesidad });
         setModalData({ necesidad: null, stockActual: null, combinationExists: null });
-      } else {
-        console.log(`Pedido tomado para el depósito: ${necesidad.deposito_id}, material: ${necesidad.material}`);
-        setModalData({ necesidad: null, stockActual: null, combinationExists: true });
+        return;
       }
+
+      // Cambiar el estado de la necesidad en el backend
+      await tomarNecesidad(necesidad.id);
+
+      // Reducir el stock en el backend
+      await reduceMaterialStock(necesidad.cod_material, necesidad.quantity);
+
+      toast.success(`La necesidad "${necesidad.id}" ha sido tomada y el stock del material "${necesidad.material}" ha sido reducido.`);
+
+      // Actualizar la UI (eliminar la necesidad tomada)
+      setNecesidades((prev) => prev.filter((n) => n.id !== necesidad.id));
+      setModalData({ necesidad: null, stockActual: null, combinationExists: true });
     } catch (error) {
-      console.error('Error al verificar combinación:', error);
+      console.error('Error al tomar el pedido:', error);
+      toast.error('Error al tomar el pedido. Por favor intenta de nuevo.');
     }
   };
 
@@ -92,10 +112,18 @@ const Necesidades: React.FC = () => {
 
       await addDepositoProveedor(necesidad.deposito_id, necesidad.material_id, necesidad.cod_material);
 
-      alert(`El proveedor para el depósito "${necesidad.deposito_id}" y material "${necesidad.material}" ha sido registrado exitosamente.`);
+      toast.success(
+        `El proveedor para el depósito "${necesidad.deposito_id}" y material "${necesidad.material}" ha sido registrado exitosamente.`
+      );
+
+      // Cerramos el modal de registro
       handleCerrarProviderModal();
+
+      // Llamamos nuevamente a verificar existencias para abrir el modal de detalle con stock actualizado
+      await handleVerificarExistencias(necesidad);
     } catch (error) {
       console.error('Error al registrar el proveedor:', error);
+      toast.error('Error al registrar el proveedor. Por favor, inténtalo de nuevo.');
     } finally {
       setRegisteringProvider(false);
     }
@@ -106,6 +134,7 @@ const Necesidades: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
+      <ToastContainer />
       <div className="container mx-auto">
         <h1 className="text-3xl font-bold text-center text-gray-800 mb-6">
           Necesidades de los Depósitos
@@ -117,9 +146,10 @@ const Necesidades: React.FC = () => {
                 key={necesidad.id}
                 className="bg-white p-4 rounded-md shadow-md border border-gray-200"
               >
-                <h2 className="text-xl font-semibold text-gray-700">Depósito {necesidad.deposito_id}</h2>
+                <h2 className="text-xl font-semibold text-gray-700">ID PEDIDO: {necesidad.id}</h2>
+                <p className="mt-2 text-gray-600">Depósito: {necesidad.deposito_id}</p>
                 <p className="mt-2 text-gray-600">Material: {necesidad.material}</p>
-                <p className="mt-2 text-gray-600">Cantidad necesitada: {necesidad.quantity}kg</p>
+                <p className="mt-2 text-gray-600">Cantidad Necesitada: {necesidad.quantity}kg</p>
                 <button
                   className="mt-4 w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
                   onClick={() => handleVerificarExistencias(necesidad)}
@@ -155,7 +185,7 @@ const Necesidades: React.FC = () => {
               {modalData.stockActual !== null &&
                 modalData.stockActual >= modalData.necesidad.quantity && (
                   <button
-                    className="bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600"
+                    className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
                     onClick={() => handleTomarPedido(modalData.necesidad!)}
                   >
                     Tomar Pedido
