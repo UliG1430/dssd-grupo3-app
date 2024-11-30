@@ -11,6 +11,20 @@ interface PuntoRecoleccion {
   ubicacion: string;
 }
 
+export interface Orden {
+  Id: number;
+  material: number;
+  pesoKg: number;
+  puntoRecoleccionId: number;
+  fecha: string;
+  caseId: number;
+  usuarioId: number;
+  paqueteId: number;
+  revisado: boolean;
+  estado: string;
+  puntoRecoleccion: PuntoRecoleccion;
+}
+
 export const addOrden = async (data: any) => {
     try {
       const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Orden/AddOrden`, {  // Usamos la URL desde el .env
@@ -112,6 +126,48 @@ export const addOrden = async (data: any) => {
       console.log(`Se actualizo la orden: ${id}`);
     } catch (error) {
       console.error('Error en la llamada a updateOrdenState:', error);
+      throw error;
+    }
+  }
+
+  export const updateStockMaterial = async (id: number, cantidad: any) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Material/Stock/Add/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(cantidad),
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Error al actualizar el stock del material: ${response.status}`);
+      }
+  
+      console.log(`Se actualizo el stock del material: ${id}`);
+    } catch (error) {
+      console.error('Error en la llamada a updateStockMaterial:', error);
+      throw error;
+    }
+  }
+
+  export const getOrdenesUserEvaluacion = async (id: number) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/Orden/GetOrdenesForUsuario/${id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Error al obtener las ordenes`);
+      }
+  
+      const data = await response.json();
+      return data; // Retornamos la respuesta si fue exitosa
+    } catch (error) {
+      console.error('Error en la llamada a getOrdenesUserEvaluacion:', error);
       throw error;
     }
   }
