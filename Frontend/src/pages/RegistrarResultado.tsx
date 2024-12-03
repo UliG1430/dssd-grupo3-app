@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getNextTaskId, executeTask, assignTask } from '../service/bonitaService';
 import { updatePaquete, getPaqueteByCaseId } from '../service/paquetesService';
 import { getUsuarioByUsername } from '../service/UsuarioService';
+import { getUsuarioIdByUsername } from '../service/bonitaService';
 import Button from '../components/Button';
 import { addNotificacionPago } from '../service/notificacionPagoService';
 
@@ -52,9 +53,10 @@ const RegistrarResultado: React.FC = () => {
       }
 
       const usuario = await getUsuarioByUsername('walter.bates');
+      const usuarioBonita = await getUsuarioIdByUsername('walter.bates');
       await new Promise(resolve => setTimeout(resolve, 2000));
       const nextTask = await getNextTaskId(usuario.caseId.toString());
-      await assignTask(nextTask, usuario.id.toString());
+      await assignTask(nextTask, usuarioBonita.toString());
 
       navigate('/paquetes'); // Replace with the actual route you want to navigate to
     } catch (error) {

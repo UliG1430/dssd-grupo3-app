@@ -42,6 +42,8 @@ namespace Backend.Data
                         .IsRequired();
                 entity.Property(o => o.estado)
                         .IsRequired();
+                entity.Property(o => o.FechaCambioEstado)
+                        .IsRequired();
 
                 entity.HasOne(o => o.PuntoRecoleccion)
                               .WithMany()
