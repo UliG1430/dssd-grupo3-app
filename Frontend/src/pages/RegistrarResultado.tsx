@@ -53,7 +53,7 @@ const RegistrarResultado: React.FC = () => {
       }
 
       const usuario = await getUsuarioByUsername('walter.bates');
-      const usuarioBonita = await getUsuarioIdByUsername('walter.bates');
+      const usuarioBonita = await getUsuarioIdByUsername(usuario.UsuarioNombre);
       await new Promise(resolve => setTimeout(resolve, 2000));
       const nextTask = await getNextTaskId(usuario.caseId.toString());
       await assignTask(nextTask, usuarioBonita.toString());
