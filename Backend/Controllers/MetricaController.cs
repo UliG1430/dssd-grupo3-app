@@ -127,7 +127,7 @@ namespace api.Controllers
             }
         }
 
-        [HttpGet("GetTareasHumanasPorUsuario")]
+        [HttpGet("GetTareasCompletadasPorCaseId")]
         public async Task<IActionResult> GetTareasCompletadasPorCaseId()
         {
             try
@@ -135,7 +135,7 @@ namespace api.Controllers
                 string token = _bonitaService.LoginAsync("walter.bates","bpm").Result;
                 List<BonitaHumanTaskResponse> tareasHumanas = (await _bonitaService.GetHumanTasks(token)).ToList();
 
-                List<TareasCompletadasPorCaseId> tareasCompletadasPorCaseId = await _ordenRepository.GetTareasCompletadasPorCaseId(tareasHumanas);
+                List<TareasCompletadasPorOrdenCreada> tareasCompletadasPorCaseId = await _ordenRepository.GetTareasCompletadasPorCaseId(tareasHumanas);
 
                 return Ok(tareasCompletadasPorCaseId);
             }

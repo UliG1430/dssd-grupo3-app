@@ -163,23 +163,30 @@ namespace Backend.Repositories
             return result;
         }
 
-        public async Task<List<TareasCompletadasPorCaseId>> GetTareasCompletadasPorCaseId(List<BonitaHumanTaskResponse> tareasHumanasBonita)
+        public async Task<List<TareasCompletadasPorOrdenCreada>> GetTareasCompletadasPorCaseId(List<BonitaHumanTaskResponse> tareasHumanasBonita)
         {
-            // SELECT distinct(o.CaseId)
+            // SELECT o.CaseId
             // FROM Ordenes o
+            // GROUP BY o.CaseId
 
-            List<TareasCompletadasPorCaseId> result = await _dbContext.Ordenes
-                .Select(o => new TareasCompletadasPorCaseId
+            List<TareasCompletadasPorOrdenCreada> result = await _dbContext.Ordenes
+                .GroupBy(o => o.CaseId)
+                .Select(g => new TareasCompletadasPorOrdenCreada
                 {
-                    CaseId = o.CaseId,
-                    CantidadTareasCompletadas = 0
+                    CaseId = g.Key,
+                    CantidadTareasCompletadas = 0,
+                    TareasCompletadas = new List<TareaCompletada>()
                 })
-                .Distinct()
                 .ToListAsync();
             
-            foreach (TareasCompletadasPorCaseId tarea in result)
+            foreach (BonitaHumanTaskResponse tareaBonita in tareasHumanasBonita)
             {
-                tarea.CantidadTareasCompletadas = tareasHumanasBonita.Count(t => t.caseId == tarea.CaseId);
+                TareaCompletada tareaCompletada = new TareaCompletada(){
+                    TaskId = tareaBonita.id,
+                    Nombre = tareaBonita.displayName,
+                    UsuarioAsignadoId = tareaBonita.assigned_id
+                };
+                result.Find(t => t.CaseId == tareaBonita.caseId).TareasCompletadas.Add(tareaCompletada);
             }
 
             return result;
@@ -214,9 +221,17 @@ namespace Backend.Repositories
         public string TiempoPromedioDeProcesamiento { get; set; }
     }
 
-    public class TareasCompletadasPorCaseId
+    public class TareaCompletada
+    {
+        public int TaskId { get; set; }
+        public string Nombre { get; set; }
+        public int UsuarioAsignadoId { get; set; }
+    }
+
+    public class TareasCompletadasPorOrdenCreada
     {
         public int CaseId { get; set; }
         public int CantidadTareasCompletadas { get; set; }
+        public List<TareaCompletada> TareasCompletadas { get; set; }
     }
 }
