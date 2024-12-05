@@ -433,6 +433,44 @@ namespace Backend.Services
             }
         }
 
+        public async Task<List<BonitaHumanTaskResponse>> GetHumanTasks (string token)
+        {
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Add("X-Bonita-API-Token", token);
+
+            try
+            {
+                // Make the GET request to retrieve the variable value
+                var response = await _httpClient.GetAsync($"http://localhost:29810/bonita/API/bpm/humanTask?p=0&c=10&f=state=completed");
+
+                // Handle specific status codes
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    throw new Exception("Unauthorized: Invalid token.");
+                }
+
+                if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+                {
+                    throw new Exception("No tasks found.");
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync();
+                    List<BonitaHumanTaskResponse> tasksData = System.Text.Json.JsonSerializer.Deserialize<List<BonitaHumanTaskResponse>>(responseBody);
+                    Console.WriteLine(tasksData);
+                    return tasksData;
+                }
+
+                // Handle unexpected responses
+                throw new Exception("Unexpected error occurred while retrieving the tasks.");
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions
+                throw new Exception($"Error: {ex.Message}");
+            }
+        }
     }
 
     public class VariableRequest
@@ -441,5 +479,29 @@ namespace Backend.Services
         public object Value { get; set; } // e.g., true or false
     }
 
-
+    public class BonitaHumanTaskResponse
+    {
+        public string displayDescription { get; set; }
+        public int executedBySubstitute { get; set; }
+        public int processId { get; set; }
+        public int parentCaseId { get; set; }
+        public string state { get; set; }
+        public int rootContainerId { get; set; }
+        public string type { get; set; }
+        public int assigned_id { get; set; }
+        public DateTime assigned_date { get; set; }
+        public int id { get; set; }
+        public int executedBy { get; set; }
+        public int caseId { get; set; }
+        public string priority { get; set; }
+        public int actorId { get; set; }
+        public string description { get; set; }
+        public string name { get; set; }
+        public DateTime reached_state_date { get; set; }
+        public int rootCaseId { get; set; }
+        public string displayName { get; set; }
+        public int parentTaskId { get; set; }
+        public DateTime dueDate { get; set; }
+        public DateTime last_update_date { get; set; }
+    }
 }

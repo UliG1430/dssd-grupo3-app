@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 
 using Backend.Data;
 using Backend.Model;
+using Backend.Services;
 
 namespace Backend.Repositories
 {
@@ -109,9 +110,11 @@ namespace Backend.Repositories
                 {
                     PuntoRecoleccionId = g.Key,
                     TiempoPromedio = g.Average(o => o.estado != "ENV" ? (o.FechaCambioEstado - o.Fecha).TotalMinutes : 0),
-                    ProporcionVerificadas = ((double)g.Count(o => o.estado != "ENV") / g.Count() * 100).ToString("0.00") + "%"
+                    ProporcionVerificadas = ((double)g.Count(o => o.estado != "ENV") / g.Count() * 100)
                 })
-                .OrderBy(g => g.TiempoPromedio)
+                // Ordenar descendiente por ProporcionVerificadas y ascendente por TiempoPromedio
+                .OrderByDescending(g => g.ProporcionVerificadas)
+                .ThenBy(g => g.TiempoPromedio)
                 .ToListAsync();
 
             result = result.Take(cant).ToList();
@@ -139,6 +142,48 @@ namespace Backend.Repositories
             
             return result;
         }
+    
+        public async Task<double> GetProporcionRecolectoresEnSemana(DateTime fechaInicio, DateTime fechaFin)
+        {
+            // SELECT COUNT(DISTINCT o.UsuarioId) / COUNT(DISTINCT r.Id)
+            // FROM Ordenes o RIGHT JOIN Usuarios r ON o.UsuarioId = r.Id
+            // WHERE o.Fecha >= fechaInicio AND o.Fecha <= fechaFin
+
+            double usuariosCargaron = await _dbContext.Ordenes
+                .Where(o => o.Fecha >= fechaInicio && o.Fecha <= fechaFin)
+                .Select(o => o.UsuarioId)
+                .Distinct()
+                .CountAsync();
+            
+            double usuariosTotales= await _dbContext.Usuarios
+                .Where(u => u.rol == "R")
+                .CountAsync();
+
+            double result = usuariosTotales != 0 ? usuariosCargaron / usuariosTotales * 100 : 0;
+            return result;
+        }
+
+        public async Task<List<TareasCompletadasPorCaseId>> GetTareasCompletadasPorCaseId(List<BonitaHumanTaskResponse> tareasHumanasBonita)
+        {
+            // SELECT distinct(o.CaseId)
+            // FROM Ordenes o
+
+            List<TareasCompletadasPorCaseId> result = await _dbContext.Ordenes
+                .Select(o => new TareasCompletadasPorCaseId
+                {
+                    CaseId = o.CaseId,
+                    CantidadTareasCompletadas = 0
+                })
+                .Distinct()
+                .ToListAsync();
+            
+            foreach (TareasCompletadasPorCaseId tarea in result)
+            {
+                tarea.CantidadTareasCompletadas = tareasHumanasBonita.Count(t => t.caseId == tarea.CaseId);
+            }
+
+            return result;
+        }
     }
 
     //DTO
@@ -160,12 +205,18 @@ namespace Backend.Repositories
     {
         public int PuntoRecoleccionId { get; set; }
         public double TiempoPromedio { get; set; }
-        public string ProporcionVerificadas { get; set; }
+        public double ProporcionVerificadas { get; set; }
     }
 
     public class TiempoPromedioPorMaterial
     {
         public string NombreMaterial { get; set; }
         public string TiempoPromedioDeProcesamiento { get; set; }
+    }
+
+    public class TareasCompletadasPorCaseId
+    {
+        public int CaseId { get; set; }
+        public int CantidadTareasCompletadas { get; set; }
     }
 }

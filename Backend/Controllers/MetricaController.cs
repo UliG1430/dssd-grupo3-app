@@ -14,14 +14,35 @@ namespace api.Controllers
         private readonly UsuarioRepository _usuarioRepository;
         private readonly OrdenRepository _ordenRepository;
         private readonly PuntoRecoleccionRepository _puntoRecoleccionRepository;
+        private readonly BonitaService _bonitaService;
 
         public MetricaController(UsuarioRepository usuarioRepository, 
                                  OrdenRepository ordenRepository,
-                                 PuntoRecoleccionRepository puntoRecoleccionRepository)
+                                 PuntoRecoleccionRepository puntoRecoleccionRepository,
+                                 BonitaService bonitaService)
         {
             _usuarioRepository = usuarioRepository;
             _ordenRepository = ordenRepository;
             _puntoRecoleccionRepository = puntoRecoleccionRepository;
+            _bonitaService = bonitaService;
+        }
+
+        [HttpPost("GetProporcionRecolectoresEnSemana")]
+        public async Task<IActionResult> GetProporcionRecolectoresEnSemana([FromBody] MetricaInicioFin body)
+        {
+            try
+            {
+                var result = await _ordenRepository.GetProporcionRecolectoresEnSemana(body.FechaInicio, body.FechaFin);
+                var response = new
+                {
+                    ProporcionRecolectoresEnSemana = result.ToString("0.00") + "%"
+                };
+                return Ok(response);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
         [HttpPost("GetRecolectoresMasCargan")]
@@ -80,8 +101,8 @@ namespace api.Controllers
                 proveedoresMasEficientes.ForEach(m => result.Add(new 
                 {
                     Proveedor = _puntoRecoleccionRepository.GetAsync(m.PuntoRecoleccionId).Result,
-                    TiempoPromedioDeVerificacion = m.TiempoPromedio.ToString("0.00") + " minutos",
-                    ProporcionOrdenesVerificadas = m.ProporcionVerificadas
+                    ProporcionOrdenesVerificadas = m.ProporcionVerificadas.ToString("0.00") + "%",
+                    TiempoPromedioDeVerificacion = m.TiempoPromedio.ToString("0.00") + " minutos"
                 }));
 
                 return Ok(result);
@@ -105,6 +126,24 @@ namespace api.Controllers
                 return BadRequest(e.Message);
             }
         }
+
+        [HttpGet("GetTareasHumanasPorUsuario")]
+        public async Task<IActionResult> GetTareasCompletadasPorCaseId()
+        {
+            try
+            {
+                string token = _bonitaService.LoginAsync("walter.bates","bpm").Result;
+                List<BonitaHumanTaskResponse> tareasHumanas = (await _bonitaService.GetHumanTasks(token)).ToList();
+
+                List<TareasCompletadasPorCaseId> tareasCompletadasPorCaseId = await _ordenRepository.GetTareasCompletadasPorCaseId(tareasHumanas);
+
+                return Ok(tareasCompletadasPorCaseId);
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
+        }
     }
     // DTOs
     public class MetricaInicioFinCantidad
@@ -112,5 +151,16 @@ namespace api.Controllers
         public DateTime FechaInicio { get; set; }
         public DateTime FechaFin { get; set; }
         public int Cantidad { get; set; }
+    }
+
+    public class MetricaInicioFin
+    {
+        public DateTime FechaInicio { get; set; }
+        public DateTime FechaFin { get; set; }
+    }
+
+    public class BonitaToken
+    {
+        public string BonitaTokenJWT { get; set; }
     }
 }
